@@ -66,7 +66,14 @@ export async function buildTrail(plan: Plan, start: StartPoint, signal: AbortSig
           return { segments: piecesToSegments(alternatives[0].pieces), alternatives };
         } catch (err) {
           if (signal.aborted) throw err;
-          console.warn("Transit route failed, drawing a straight line instead:", err);
+          console.warn("No public transport connection, drawing the walking route instead:", err);
+          try {
+            const coords: LngLat[] = [from, ...(await footRoute(from, to, signal)), to];
+            return { segments: [{ mode: "walk", coords, routed: true }], alternatives: [] };
+          } catch (walkErr) {
+            if (signal.aborted) throw walkErr;
+            console.warn("Walking route failed too, drawing a straight line instead:", walkErr);
+          }
         }
       }
       return { segments: [{ mode: leg.mode, coords: [from, to], routed: false }], alternatives: [] };

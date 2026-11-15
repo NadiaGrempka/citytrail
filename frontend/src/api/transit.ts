@@ -125,9 +125,21 @@ async function plan(from: LngLat, to: LngLat, whenIso: string, transitModes: str
     maxPreTransitTime: "3600",
     maxPostTransitTime: "3600",
   });
-  const res = await fetch(`${PLAN_URL}?${params}`, { signal });
-  if (!res.ok) throw new Error(`Journey planner answered ${res.status}`);
-  return (await res.json()) as ApiPlan;
+  const url = `${PLAN_URL}?${params}`;
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    if (attempt > 0) await new Promise((resolve) => setTimeout(resolve, 800));
+    try {
+      const res = await fetch(url, { signal });
+      if (res.ok) return (await res.json()) as ApiPlan;
+      lastError = new Error(`Journey planner answered ${res.status}`);
+      if (res.status < 500 && res.status !== 429) break;
+    } catch (err) {
+      if (signal.aborted) throw err;
+      lastError = err;
+    }
+  }
+  throw lastError;
 }
 
 const fastest = (list: ApiItinerary[] | undefined) =>
