@@ -1,0 +1,70 @@
+.btn-primary,
+.btn-small,
+.btn-danger,
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  border-radius: 999px;
+  font: inherit;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, filter 0.15s;
+}
+
+.btn-primary {
+  padding: 0.7rem 1.4rem;
+  border: 0;
+  background: var(--pg-action);
+  color: var(--pg-action-text);
+  font-size: 0.9rem;
+}
+
+.btn-primary:hover:not(:disabled),
+.btn-primary:focus-visible {
+  filter: brightness(1.15);
+}
+
+.btn-small,
+.btn-danger {
+  padding: 0.35rem 0.95rem;
+  border: 1px solid var(--pg-line);
+  background: transparent;
+  color: inherit;
+  font-size: 0.8rem;
+}
+
+.btn-small:hover,
+.btn-small:focus-visible {
+  border-color: var(--pg-action);
+  background: var(--pg-action);
+  color: var(--pg-action-text);
+}
+
+.btn-danger:hover:not(:disabled),
+.btn-danger:focus-visible {
+  border-color: var(--pg-danger);
+  background: var(--pg-danger);
+  color: #fff;
+}
+
+.btn-primary:disabled,
+.btn-danger:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.icon-button {
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--pg-line);
+  background: transparent;
+  color: inherit;
+}
+
+.icon-button:hover,
+.icon-button:focus-visible {
+  border-color: var(--pg-danger);
+  background: var(--pg-danger);
+  color: #fff;
+}

@@ -1,10 +1,11 @@
 import { useEffect, useState, type SubmitEvent } from "react";
 import { deleteAllTrips, fetchInfo, listTrips, type Info } from "../api/client";
-import { ThemeButton } from "../components/PageShell";
+import { ThemeButton } from "../components/ThemeButton";
 import { ClockIcon, MoonIcon, PinIcon, SunIcon } from "../components/icons";
 import { geocodeGdansk } from "../geocode";
 import type { Settings, StartMode, TimeMode, WalkPace } from "../settings";
 import type { Theme } from "../theme";
+import "./SettingsPage.css";
 
 type Props = {
   settings: Settings;

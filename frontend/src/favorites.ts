@@ -11,7 +11,6 @@ function load(): string[] {
   }
 }
 
-/** Hearted place ids, kept in localStorage. */
 export function useFavorites(): { ids: string[]; has: (id: string) => boolean; toggle: (id: string) => void } {
   const [ids, setIds] = useState<string[]>(load);
 
@@ -21,7 +20,6 @@ export function useFavorites(): { ids: string[]; has: (id: string) => boolean; t
       try {
         localStorage.setItem(KEY, JSON.stringify(next));
       } catch {
-        /* favourites just won't persist */
       }
       return next;
     });

@@ -1,4 +1,5 @@
 import { HeartIcon } from "./icons";
+import "./HeartButton.css";
 
 type Props = { saved: boolean; onToggle: () => void; name: string; className?: string };
 

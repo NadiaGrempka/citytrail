@@ -1,0 +1,32 @@
+.page-content {
+  width: min(880px, 100%);
+  margin: 0 auto;
+}
+
+.eyebrow {
+  margin: 0 0 0.75rem;
+  color: var(--pg-muted);
+  font-size: 10px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.page-title {
+  margin: 0 0 1rem;
+  font-size: clamp(38px, 6vw, 72px);
+  font-weight: 400;
+  line-height: 0.98;
+  letter-spacing: -0.052em;
+}
+
+.page-lede {
+  max-width: 34rem;
+  margin: 0 0 2.5rem;
+  color: var(--pg-muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.page-error {
+  color: var(--pg-danger);
+}

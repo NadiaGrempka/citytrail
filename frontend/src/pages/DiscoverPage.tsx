@@ -4,6 +4,7 @@ import { PlaceThumb } from "../components/PlaceThumb";
 import { interestScore } from "../interests";
 import { humanize, placeMeta } from "../placeInfo";
 import type { Place } from "../types";
+import "./DiscoverPage.css";
 
 type Filter = "everything" | "tonight" | "coffee" | "culture" | "outside";
 
@@ -40,7 +41,6 @@ export function DiscoverPage({ places, interests, isSaved, onToggleSaved, onOpen
   const [filter, setFilter] = useState<Filter>("everything");
   const [shown, setShown] = useState(PAGE_SIZE);
 
-  // Places that match what the visitor likes come first; ties keep the dataset order.
   const visible = useMemo(() => {
     const matching = places.filter(MATCHES[filter]);
     return matching

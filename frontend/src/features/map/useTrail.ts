@@ -3,7 +3,6 @@ import { buildTrail, type TrailSegment } from "../../api/routing";
 import type { StartPoint } from "../../location";
 import type { Plan } from "../../types";
 
-/** Looks up the street route for a plan. Returns null until it is ready (or when there is no plan). */
 export function useTrail(plan: Plan | null, start: StartPoint | null): TrailSegment[] | null {
   const [trail, setTrail] = useState<TrailSegment[] | null>(null);
 

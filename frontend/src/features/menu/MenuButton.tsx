@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { ComponentType } from "react";
 import { CompassIcon, HeartIcon, MapIcon, RouteIcon, SettingsIcon, UserIcon } from "../../components/icons";
+import "./MenuButton.css";
 
 export type Page = "map" | "discover" | "place" | "saved" | "trips" | "prefs" | "settings";
 

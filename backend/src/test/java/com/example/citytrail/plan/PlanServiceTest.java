@@ -65,7 +65,6 @@ class PlanServiceTest {
         Plan first = service.plan(new PlanRequest(
                 "Jozef k and then a nearby museum", null, null, null, null, null, null));
 
-        // Without "near", the bookshop would be picked next to the museum (Antykwariat Naukowy).
         Plan plain = service.plan(new PlanRequest(
                 "and then a bookshop", null, null, null, ids(first), false, null));
         assertEquals("antykwariat-naukowy", plain.stops().get(2).place().id());
@@ -81,7 +80,6 @@ class PlanServiceTest {
         Plan first = service.plan(new PlanRequest(
                 "Jozef k and then a nearby museum", null, null, null, null, null, null));
 
-        // "the cafe" is Józef K., the first stop; plain, the sight would be picked next to the museum.
         Plan plain = service.plan(new PlanRequest(
                 "and a historic sight", null, null, null, ids(first), false, null));
         assertEquals("gora-gradowa", plain.stops().get(2).place().id());

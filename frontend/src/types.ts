@@ -35,7 +35,7 @@ export type Place = {
 export type District = {
   id: string;
   name: string;
-  center: [number, number]; // [lat, lng]
+  center: [number, number];
   radiusM: number;
 };
 
@@ -51,8 +51,8 @@ export type Leg = {
 
 export type Stop = {
   place: Place;
-  arrive: string; // "HH:mm"
-  depart: string; // "HH:mm"
+  arrive: string;
+  depart: string;
   legFromPrevious: Leg;
   event: UpcomingEvent | null;
   notes: string[];
@@ -62,7 +62,7 @@ export type Plan = {
   parsedBy: "llm" | "keyword" | "saved";
   intent: Intent;
   dayOffset: number;
-  date: string; // ISO date
+  date: string;
   startTime: string;
   endTime: string;
   totalMinutes: number;
@@ -71,7 +71,6 @@ export type Plan = {
   warnings: string[];
 };
 
-/** A saved trip as the API returns it (the stops are place ids; the plan is recomputed on open). */
 export type Trip = {
   id: string;
   title: string;

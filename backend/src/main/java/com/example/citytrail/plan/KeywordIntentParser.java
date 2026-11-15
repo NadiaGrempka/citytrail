@@ -15,13 +15,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * Offline fallback: finds keywords in the text and emits one slot per matching rule, ordered by where the
- * first keyword appears. Keywords match at the start of a word, so "cafe" also matches "cafes" and
- * "thrift" matches "thriftshop". Tags from every matching keyword of a rule are merged into that rule's slot.
- * Places mentioned by name ("Józef K.", accents and punctuation optional) become slots of their own, and
- * suppress a same-category keyword right next to the name ("Józef K. cafe" is one stop, not two).
- */
 @Component
 public class KeywordIntentParser implements IntentParser {
 
@@ -124,7 +117,6 @@ public class KeywordIntentParser implements IntentParser {
 
     private static final List<String> HOME_KEYWORDS = List.of("home", "hotel", "back to", "way back", "return");
 
-    /** How close (in characters) a keyword must be to a place name to count as describing that place. */
     private static final int NAME_REACH = 15;
 
     private final IntentVocabulary vocabulary;
@@ -185,7 +177,6 @@ public class KeywordIntentParser implements IntentParser {
         return new Intent(slots, returnHome);
     }
 
-    /** The first place whose name appears in the text (accents, case and punctuation ignored), or null. */
     public Place findNamedPlace(String text) {
         String folded = fold(text);
         for (Place place : repository.findAll()) {
@@ -198,17 +189,11 @@ public class KeywordIntentParser implements IntentParser {
         return null;
     }
 
-    /** Lower case without accents; one output char per input char, so indexes still line up with the text. */
     private static String fold(String text) {
         String decomposed = Normalizer.normalize(text.toLowerCase(Locale.ROOT), Normalizer.Form.NFD);
         return decomposed.replaceAll("\\p{M}+", "").replace('ł', 'l');
     }
 
-    /**
-     * Ways a visitor might write a place name, ignoring accents, case and punctuation: the full name
-     * ("Józef K." finds "jozef k"), the name without a bracketed part or anything after "&", and the
-     * bracketed part itself ("Złota Brama (Golden Gate)" also answers to "Golden Gate").
-     */
     private static List<Pattern> namePatterns(String name) {
         Set<String> variants = new LinkedHashSet<>();
         variants.add(name);
@@ -222,7 +207,7 @@ public class KeywordIntentParser implements IntentParser {
         for (String variant : variants) {
             String[] tokens = fold(variant).replaceAll("[^a-z0-9]+", " ").trim().split(" ");
             if (tokens.length == 1 && tokens[0].length() < 3) {
-                continue; // too short to match reliably
+                continue;
             }
             patterns.add(Pattern.compile("(?<![a-z0-9])" + String.join("[^a-z0-9]+", tokens) + "(?![a-z0-9])"));
         }

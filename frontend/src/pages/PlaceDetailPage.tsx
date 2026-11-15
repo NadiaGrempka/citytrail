@@ -3,6 +3,7 @@ import { PlaceThumb } from "../components/PlaceThumb";
 import { ArrowLeftIcon, SparkIcon, WalkIcon } from "../components/icons";
 import { humanize, transitLine } from "../placeInfo";
 import type { Place } from "../types";
+import "./PlaceDetailPage.css";
 
 type Props = {
   place: Place | undefined;
@@ -14,18 +15,14 @@ type Props = {
 };
 
 export function PlaceDetailPage({ place, saved, onToggleSaved, onBack, onShowRoute, onAskGuide }: Props) {
-  if (!place) {
-    return (
+  const content = !place ? (
       <div className="detail-missing">
         <p>That place isn’t available.</p>
         <button type="button" className="btn-primary" onClick={onBack}>
           Back
         </button>
       </div>
-    );
-  }
-
-  return (
+  ) : (
     <div className="detail">
       <div className="detail-photo">
         <PlaceThumb place={place} className="detail-photo-fill" />
@@ -90,4 +87,6 @@ export function PlaceDetailPage({ place, saved, onToggleSaved, onBack, onShowRou
       </div>
     </div>
   );
+
+  return <div className="page page--detail">{content}</div>;
 }

@@ -1,11 +1,12 @@
+import { EmptyState } from "../components/EmptyState";
 import { PlaceThumb } from "../components/PlaceThumb";
 import { ArrowRightIcon, HeartIcon } from "../components/icons";
 import { humanize, transitLine } from "../placeInfo";
 import type { Place } from "../types";
+import "./SavedPlacesPage.css";
 
 type Props = { places: Place[]; onOpenPlace: (id: string) => void; onExplore: () => void };
 
-/** The hearted places, in the order they were saved. */
 export function SavedPlacesPage({ places, onOpenPlace, onExplore }: Props) {
   return (
     <div className="page-content">
@@ -16,16 +17,13 @@ export function SavedPlacesPage({ places, onOpenPlace, onExplore }: Props) {
       </p>
 
       {places.length === 0 ? (
-        <div className="empty-state">
-          <span className="empty-icon">
-            <HeartIcon size={26} />
-          </span>
-          <h2>Nothing saved yet</h2>
-          <p>Tap the heart on any place you’d like to remember.</p>
-          <button type="button" className="btn-primary" onClick={onExplore}>
-            Explore places
-          </button>
-        </div>
+        <EmptyState
+          icon={<HeartIcon size={26} />}
+          title="Nothing saved yet"
+          text="Tap the heart on any place you’d like to remember."
+          actionLabel="Explore places"
+          onAction={onExplore}
+        />
       ) : (
         <ul className="saved-rows">
           {places.map((place) => (

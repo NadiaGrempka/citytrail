@@ -1,7 +1,6 @@
 import react from "@vitejs/plugin-react";
 import { defineConfig, lazyPlugins } from "vite-plus";
 
-// https://vite.dev/config/
 export default defineConfig({
   fmt: {},
   lint: {
@@ -29,7 +28,6 @@ export default defineConfig({
   },
   plugins: lazyPlugins(() => [react()]),
   optimizeDeps: {
-    // MapLibre v6 spawns a module worker via import.meta.url; pre-bundling breaks that path.
     exclude: ["maplibre-gl"],
   },
   server: {

@@ -24,13 +24,6 @@ import java.time.Duration;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * Calls any OpenAI-compatible /chat/completions endpoint (Groq, Gemini's OpenAI-compatible endpoint,
- * OpenRouter, a local Ollama...). Active only when citytrail.llm.enabled=true AND an API key is set, so
- * adding the key is all it takes to switch the AI parser on. The model sees the place list and the route
- * built so far, so it can resolve place names, "near X" and follow-ups. Its answer is treated as untrusted:
- * it is parsed and then sanitized against the dataset (unknown ids and tags are dropped).
- */
 @Component
 @ConditionalOnExpression("${citytrail.llm.enabled:false} and '${citytrail.llm.api-key:}' != ''")
 public class LlmIntentParser implements IntentParser {
@@ -76,7 +69,6 @@ public class LlmIntentParser implements IntentParser {
         return parse(text, List.of());
     }
 
-    /** route: the stops already planned, so "near the museum" and follow-ups can be resolved. */
     public Intent parse(String text, List<Place> route) {
         ChatRequest request = new ChatRequest(
                 model,
@@ -96,7 +88,6 @@ public class LlmIntentParser implements IntentParser {
         return vocabulary.sanitize(raw);
     }
 
-    /** The visitor's text is only ever sent as the user message, never mixed into the instructions. */
     static String userMessage(String text, List<Place> route) {
         String stops = route.isEmpty()
                 ? "none"
@@ -115,7 +106,6 @@ public class LlmIntentParser implements IntentParser {
         return message.content();
     }
 
-    /** Some models wrap JSON in ```json fences even when told not to. */
     private static String stripFences(String content) {
         String trimmed = content.trim();
         if (trimmed.startsWith("```")) {

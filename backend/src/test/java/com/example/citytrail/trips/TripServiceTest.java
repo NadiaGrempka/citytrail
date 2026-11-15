@@ -51,7 +51,7 @@ class TripServiceTest {
         Trip created = service.create(request("My day", List.of("jozef-k", "ecs", "no-such-place")));
 
         assertEquals("My day", created.title());
-        assertEquals(List.of("jozef-k", "ecs"), created.stopIds());   // unknown id dropped, order kept
+        assertEquals(List.of("jozef-k", "ecs"), created.stopIds());
         assertTrue(created.returnHome());
         assertEquals(List.of(created.id()), service.list().stream().map(Trip::id).toList());
 

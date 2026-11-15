@@ -4,10 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.util.List;
 
-/**
- * category is one of: food, store, event, landmark.
- * coordsAccuracy is "landmark" or "approx" (approx = verify on a map before relying on it).
- */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record Place(
         String id,

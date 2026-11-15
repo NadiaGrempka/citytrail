@@ -18,12 +18,10 @@
   <description>CityTrail MVP backend</description>
 
   <properties>
-    <!-- Spring Boot 4 needs Java 17+. Lower this to 17 if that is what your JDK is. -->
     <java.version>21</java.version>
   </properties>
 
   <dependencies>
-    <!-- Boot 4 renamed spring-boot-starter-web to spring-boot-starter-webmvc -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-webmvc</artifactId>
@@ -32,7 +30,6 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-actuator</artifactId>
     </dependency>
-    <!-- Saved trips: embedded in-memory H2 through Spring's JdbcClient; no external server needed. -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-jdbc</artifactId>
@@ -40,7 +37,6 @@
     <dependency>
       <groupId>com.h2database</groupId>
       <artifactId>h2</artifactId>
-      <scope>runtime</scope>
     </dependency>
 
     <dependency>

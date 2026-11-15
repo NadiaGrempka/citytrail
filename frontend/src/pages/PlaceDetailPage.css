@@ -1,0 +1,162 @@
+.detail-photo-fill.thumb {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+}
+
+.detail-photo-fill .thumb-initial {
+  font-size: 4rem;
+}
+
+.page--detail {
+  flex-direction: row;
+}
+
+.detail {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  width: 100%;
+  min-height: 100%;
+}
+
+.detail-photo {
+  position: relative;
+  min-height: 100vh;
+}
+
+.detail-back {
+  position: absolute;
+  top: calc(var(--frame-width, 1.5rem) + 1.5rem);
+  left: calc(var(--frame-width, 1.5rem) + 1.5rem + 3.75rem); 
+  z-index: 1;
+}
+
+.round-button {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  border: 0;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.85);
+  color: #17211d;
+  cursor: pointer;
+}
+
+.round-button:hover,
+.round-button:focus-visible {
+  background: #fff;
+}
+
+.detail-heart {
+  position: absolute;
+  top: calc(var(--frame-width, 1.5rem) + 1.5rem);
+  right: 1.5rem;
+  width: 3rem;
+  height: 3rem;
+}
+
+.detail-body {
+  align-self: center;
+  max-width: 560px;
+  padding: 4rem 3rem;
+}
+
+.detail-title {
+  margin-bottom: 0.75rem;
+}
+
+.detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.25rem;
+  margin: 0 0 1.25rem;
+  color: var(--pg-muted);
+}
+
+.detail-description {
+  margin: 0 0 1.25rem;
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0 0 1.5rem;
+  padding: 0;
+  list-style: none;
+}
+
+.tag-list li {
+  padding: 0.3rem 0.85rem;
+  border: 1px solid var(--pg-line);
+  border-radius: 999px;
+  font-size: 0.82rem;
+}
+
+.guide-note {
+  display: flex;
+  gap: 0.9rem;
+  margin-bottom: 1rem;
+  padding: 1rem 1.25rem;
+  border-radius: 20px;
+  background: var(--pg-card);
+}
+
+.guide-note h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
+}
+
+.guide-note p {
+  margin: 0;
+  color: var(--pg-muted);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.guide-note-icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 50%;
+  background: var(--pg-accent);
+  color: #172119;
+}
+
+.detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.btn-large {
+  padding: 0.7rem 1.4rem;
+  font-size: 0.9rem;
+}
+
+.detail-missing {
+  margin: auto;
+  text-align: center;
+}
+
+@media (max-width: 760px) {
+  .detail {
+      grid-template-columns: 1fr;
+  }
+
+  .detail-photo {
+      min-height: 42vh;
+  }
+
+  .detail-body {
+      padding: 2rem 1.5rem 3rem;
+  }
+}

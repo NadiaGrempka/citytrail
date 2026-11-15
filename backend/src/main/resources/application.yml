@@ -2,25 +2,22 @@ spring:
   application:
     name: citytrail-backend
 
+  datasource:
+    url: jdbc:h2:mem:citytrail;DB_CLOSE_DELAY=-1
+    username: sa
+    password: ""
+
 server:
   port: 8080
   error:
-    include-message: always   # dev convenience: lets the frontend show 400 messages
+    include-message: always
 
 citytrail:
   cors:
     allowed-origins: http://localhost:5173
-  # Start / "home" point used when the request does not send one (Gdańsk Main Town)
   default-start:
-    lat: 54.3493   # ul. Długa 11, Gdańsk (approximate)
+    lat: 54.3493
     lng: 18.6500
-  # AI intent parser (optional). It switches on when an API key is present, e.g.
-  #   export CITYTRAIL_LLM_API_KEY=...        (free key from https://console.groq.com)
-  # Without a key, or if a call fails or is rate limited, the offline keyword parser is used.
-  # Any OpenAI-compatible endpoint works; override with CITYTRAIL_LLM_BASE_URL / CITYTRAIL_LLM_MODEL, e.g.
-  #   https://generativelanguage.googleapis.com/v1beta/openai   (Gemini)
-  #   https://openrouter.ai/api/v1
-  # Model names and free-tier limits change: list a provider's current models before relying on one.
   llm:
     enabled: ${CITYTRAIL_LLM_ENABLED:true}
     base-url: ${CITYTRAIL_LLM_BASE_URL:https://api.groq.com/openai/v1}

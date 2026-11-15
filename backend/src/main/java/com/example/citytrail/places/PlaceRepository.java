@@ -13,7 +13,6 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-/** Read-only in-memory store, loaded once from the mock dataset on the classpath. */
 @Component
 public class PlaceRepository {
 

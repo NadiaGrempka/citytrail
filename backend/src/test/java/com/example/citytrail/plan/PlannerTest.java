@@ -21,7 +21,6 @@ class PlannerTest {
     private static final double START_LNG = 18.6510;
 
     private final PlaceRepository repository = new PlaceRepository(JsonMapper.builder().build());
-    // Thursday 2026-11-12, Gdańsk time
     private final Clock clock = Clock.fixed(Instant.parse("2026-11-12T10:00:00Z"), ZoneId.of("Europe/Warsaw"));
     private final Planner planner = new Planner(repository, clock);
 

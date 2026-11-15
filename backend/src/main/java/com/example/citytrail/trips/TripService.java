@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/** Validation and orchestration for saved trips. */
 @Service
 public class TripService {
 
@@ -50,7 +49,6 @@ public class TripService {
 
     public TripView get(String id) {
         Trip trip = find(id);
-        // A start of 0,0 means "none was saved"; the planner then uses its default start point.
         Double lat = trip.startLat() == 0 ? null : trip.startLat();
         Double lng = trip.startLng() == 0 ? null : trip.startLng();
         return new TripView(trip, planService.replan(trip.stopIds(), trip.returnHome(), lat, lng));

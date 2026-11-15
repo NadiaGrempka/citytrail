@@ -8,7 +8,6 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       const body = (await res.json()) as { message?: string };
       if (body.message) detail = body.message;
     } catch {
-      // response had no JSON body; keep the status text
     }
     throw new Error(detail);
   }
@@ -19,10 +18,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 export const fetchPlaces = () => request<Place[]>("/places");
 export const fetchDistricts = () => request<District[]>("/districts");
 
-/** The route built so far; sent with a follow-up so the new stops are added to it. */
 export type PreviousRoute = { stopIds: string[]; returnHome: boolean };
 
-/** Per-request preferences from Settings. */
 export type PlanOptions = { startTime?: string; walkPace?: string };
 
 export const postPlan = (

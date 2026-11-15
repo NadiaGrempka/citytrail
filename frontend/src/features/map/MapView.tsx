@@ -1,22 +1,22 @@
 import { useEffect, useRef } from "react";
 import { LngLatBounds, Map as MapLibreMap, Marker, Popup, type GeoJSONSource } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { MAP_CENTER, MAP_STYLE_DARK, MAP_STYLE_LIGHT, MAP_ZOOM } from "../../config";
+import { MAP_CENTER, MAP_ZOOM } from "../../config";
+import { buildMapStyle } from "./mapStyle";
 import type { StartPoint } from "../../location";
 import type { Theme } from "../../theme";
 import type { TrailSegment } from "../../api/routing";
 import { MODE_COLOR, type RouteOverlay } from "../../api/transit";
 import type { Place, Stop } from "../../types";
 import { EMPTY_TRAIL, lengthM, toCollection, type TrailCollection } from "./trailGeometry";
+import "./MapView.css";
 
 type Props = {
   theme: Theme;
   start: StartPoint | null;
   stops: Stop[];
   trail: TrailSegment[] | null;
-  /** A place to fly to and highlight (a new key re-triggers it). */
   focus: { key: number; place: Place } | null;
-  /** A tram/bus/train/walk option picked in the chat; replaces the plan's trail while shown. */
   route: RouteOverlay | null;
 };
 
@@ -61,7 +61,6 @@ function installTrail(map: MapLibreMap, theme: Theme, data: TrailCollection) {
 const ROUTE_SOURCE = "route-option";
 const TRAIL_LAYERS = ["trail-casing", "trail-line", "trail-dashed"];
 
-/** Draws (or clears) the picked route option, hiding the plan's own trail while it is shown. */
 function applyRoute(map: MapLibreMap, theme: Theme, route: RouteOverlay | null) {
   const features = (route?.legs ?? [])
     .filter((l) => l.coords.length > 1)
@@ -106,7 +105,7 @@ function applyRoute(map: MapLibreMap, theme: Theme, route: RouteOverlay | null) 
   });
 }
 
-const styleFor = (theme: Theme) => (theme === "dark" ? MAP_STYLE_DARK : MAP_STYLE_LIGHT);
+const styleFor = (theme: Theme) => buildMapStyle(theme);
 
 export function MapView({ theme, start, stops, trail, focus, route }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -115,14 +114,14 @@ export function MapView({ theme, start, stops, trail, focus, route }: Props) {
   const appliedTheme = useRef(theme);
   const drawnTrail = useRef<TrailCollection>(EMPTY_TRAIL);
   const routeRef = useRef<RouteOverlay | null>(route);
+  const startRef = useRef<StartPoint | null>(start);
+  startRef.current = start;
 
-  // The trail layers live in the map style, so they are re-added after every style swap (theme change).
   const drawTrail = (map: MapLibreMap, data: TrailCollection) => {
     drawnTrail.current = data;
     try {
       installTrail(map, themeRef.current, data);
     } catch {
-      /* style still loading: the style.load handler draws it */
     }
   };
   const drawTrailRef = useRef(drawTrail);
@@ -152,10 +151,9 @@ export function MapView({ theme, start, stops, trail, focus, route }: Props) {
     const map = mapRef.current;
     if (!map || appliedTheme.current === theme) return;
     appliedTheme.current = theme;
-    map.setStyle(styleFor(theme)); // DOM markers survive a style swap
+    map.setStyle(styleFor(theme));
   }, [theme]);
 
-  // "You are here" marker at the trip's start point, and fly there when it becomes known
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !start) return;
@@ -173,7 +171,6 @@ export function MapView({ theme, start, stops, trail, focus, route }: Props) {
     };
   }, [start]);
 
-  // Lettered markers for the planned stops
   useEffect(() => {
     const map = mapRef.current;
     if (!map || stops.length === 0) return;
@@ -193,7 +190,6 @@ export function MapView({ theme, start, stops, trail, focus, route }: Props) {
     return () => markers.forEach((m) => m.remove());
   }, [stops]);
 
-  // A route option picked in the chat: draw it, hide the plan's trail, and fit the map to it
   useEffect(() => {
     routeRef.current = route;
     const map = mapRef.current;
@@ -201,7 +197,7 @@ export function MapView({ theme, start, stops, trail, focus, route }: Props) {
     try {
       applyRoute(map, themeRef.current, route);
     } catch {
-      return; // style still loading: the style.load handler draws it
+      return;
     }
     if (!route) return;
     const bounds = new LngLatBounds();
@@ -209,7 +205,6 @@ export function MapView({ theme, start, stops, trail, focus, route }: Props) {
     if (!bounds.isEmpty()) map.fitBounds(bounds, { padding: { top: 100, bottom: 120, left: 80, right: 80 }, maxZoom: 16, duration: 1000 });
   }, [route]);
 
-  // Fly to a place picked from outside the map ("Find something fun") and show its pin as a larger, labelled marker
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !focus) return;
@@ -222,13 +217,23 @@ export function MapView({ theme, start, stops, trail, focus, route }: Props) {
       .setPopup(new Popup({ offset: 22 }).setText(focus.place.name))
       .addTo(map);
     marker.togglePopup();
-    map.flyTo({ center: [focus.place.lng, focus.place.lat], zoom: 15.5, duration: 1600 });
+    const from = startRef.current;
+    if (from) {
+      const bounds = new LngLatBounds([from.lng, from.lat], [from.lng, from.lat]);
+      bounds.extend([focus.place.lng, focus.place.lat]);
+      map.fitBounds(bounds, {
+        padding: { top: 140, bottom: 180, left: 120, right: 120 },
+        maxZoom: 15.5,
+        duration: 1600,
+      });
+    } else {
+      map.flyTo({ center: [focus.place.lng, focus.place.lat], zoom: 15.5, duration: 1600 });
+    }
     return () => {
       marker.remove();
     };
   }, [focus]);
 
-  // The trail: draw it in along its length, then fit the map to it
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;

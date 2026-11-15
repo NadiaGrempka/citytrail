@@ -3,15 +3,12 @@ import type { Plan } from "../types";
 
 export type LngLat = [number, number];
 
-/** One leg of the trail. `routed` is true when the line follows real streets. */
 export type TrailSegment = {
   mode: "walk" | "transit";
   coords: LngLat[];
   routed: boolean;
 };
 
-// Free public walking router run by the OpenStreetMap community (no key, CORS enabled).
-// Fair-use service: fine for a demo, host your own OSRM/Valhalla for real traffic.
 const FOOT_ROUTER = "https://routing.openstreetmap.de/routed-foot/route/v1/foot";
 
 type OsrmResponse = { code: string; routes?: { geometry: { coordinates: LngLat[] } }[] };
@@ -26,10 +23,6 @@ async function footRoute(from: LngLat, to: LngLat, signal: AbortSignal): Promise
   return route.geometry.coordinates;
 }
 
-/**
- * Builds the trail for a plan: start -> each stop -> back to the start (when the plan has a ride home).
- * Walking legs follow real streets; transit legs and failed lookups are straight lines.
- */
 export async function buildTrail(plan: Plan, start: StartPoint, signal: AbortSignal): Promise<TrailSegment[]> {
   const origin: LngLat = [start.lng, start.lat];
   const points: LngLat[] = [origin, ...plan.stops.map((s): LngLat => [s.place.lng, s.place.lat])];
@@ -45,7 +38,6 @@ export async function buildTrail(plan: Plan, start: StartPoint, signal: AbortSig
       const to = points[i + 1];
       if (leg.mode === "walk") {
         try {
-          // Routes snap to the nearest street, so join the exact endpoints on for a clean connection.
           return { mode: "walk", coords: [from, ...(await footRoute(from, to, signal)), to], routed: true };
         } catch (err) {
           if (signal.aborted) throw err;

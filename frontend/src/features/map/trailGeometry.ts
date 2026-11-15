@@ -25,7 +25,6 @@ export function lengthM(coords: LngLat[]): number {
   return total;
 }
 
-/** The first `limitM` metres of a line, with the end point interpolated. */
 function head(coords: LngLat[], limitM: number): LngLat[] {
   const out: LngLat[] = [coords[0]];
   let left = limitM;
@@ -45,7 +44,6 @@ function head(coords: LngLat[], limitM: number): LngLat[] {
   return out;
 }
 
-/** GeoJSON for the first `revealM` metres of the whole trail (segments are drawn one after another). */
 export function toCollection(segments: TrailSegment[], lengths: number[], revealM: number): TrailCollection {
   const features: TrailFeature[] = [];
   let left = revealM;

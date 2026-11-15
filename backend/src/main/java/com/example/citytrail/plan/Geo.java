@@ -7,7 +7,6 @@ final class Geo {
     private Geo() {
     }
 
-    /** Great-circle distance in metres (haversine). */
     static double meters(double lat1, double lng1, double lat2, double lng2) {
         double dLat = Math.toRadians(lat2 - lat1);
         double dLng = Math.toRadians(lng2 - lng1);

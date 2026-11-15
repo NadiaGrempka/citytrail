@@ -1,0 +1,22 @@
+.heart-button {
+  display: grid;
+  place-items: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  border: 0;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.85);
+  color: #17211d;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, transform 0.15s;
+}
+
+.heart-button:hover,
+.heart-button:focus-visible {
+  transform: scale(1.08);
+  background: #fff;
+}
+
+.heart-button.is-saved {
+  color: #d93025;
+}

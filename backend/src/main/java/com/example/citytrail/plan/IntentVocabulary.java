@@ -14,7 +14,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 
-/** The closed set of categories and tags the planner understands, derived from the dataset. */
 @Component
 public class IntentVocabulary {
 
@@ -23,7 +22,7 @@ public class IntentVocabulary {
     private static final int MAX_TAGS_PER_SLOT = 3;
 
     private final Set<String> knownTags;
-    private final Map<String, String> idByKey = new HashMap<>();   // lower-case id or name -> place id
+    private final Map<String, String> idByKey = new HashMap<>();
     private final Map<String, String> categoryById = new HashMap<>();
 
     public IntentVocabulary(PlaceRepository repository) {
@@ -37,7 +36,6 @@ public class IntentVocabulary {
         this.knownTags = Set.copyOf(tags);
     }
 
-    /** The place id for a model-supplied id (or exact name), or null when it is not in the dataset. */
     public String knownPlaceId(String idOrName) {
         if (idOrName == null) {
             return null;
@@ -45,7 +43,6 @@ public class IntentVocabulary {
         return idByKey.get(idOrName.trim().toLowerCase(Locale.ROOT));
     }
 
-    /** Sorted list, used to fill the {{TAGS}} placeholder in the LLM prompt. */
     public List<String> sortedTags() {
         return new ArrayList<>(new TreeSet<>(knownTags));
     }
@@ -60,7 +57,6 @@ public class IntentVocabulary {
                 .toList();
     }
 
-    /** Drops anything that is not a known category or tag, and caps the number of slots. */
     public Intent sanitize(RawIntent raw) {
         List<Slot> slots = new ArrayList<>();
         if (raw != null && raw.slots() != null) {
@@ -70,7 +66,6 @@ public class IntentVocabulary {
                 }
                 String placeId = knownPlaceId(rawSlot.place());
                 String nearId = knownPlaceId(rawSlot.near());
-                // A named place decides the category; otherwise the model's category must be a known one.
                 String category = placeId != null
                         ? categoryById.get(placeId)
                         : (rawSlot.category() == null ? null : rawSlot.category().trim().toLowerCase(Locale.ROOT));

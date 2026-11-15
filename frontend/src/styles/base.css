@@ -1,0 +1,39 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+:root {
+  color-scheme: light;
+  --frame-color: #ffffff;
+  --ink: #1f3a33;
+  --glass: rgb(255 255 255 / 0.5);
+  --panel-from: #6f9f7c;
+  --panel-to: #8fae8c;
+  --frame-width: 1.5rem;
+  --map-radius: 60px;
+  --chat-bg: #6A866B;
+  --chat-border-color: rgb(11 41 0 / 0.2);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --frame-color: #0e1714;
+  --ink: #e3efe8;
+  --glass: rgb(26 40 34 / 0.55);
+  --panel-from: #2d4a3b;
+  --panel-to: #3d5d4b;
+  --chat-bg: #192A20;
+  --chat-border-color: rgb(217 243 106 / 0.5);
+}
+
+body {
+  color: var(--ink);
+  background: var(--frame-color);
+}

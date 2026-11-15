@@ -5,15 +5,11 @@ export type TimeMode = "now" | "set";
 export type WalkPace = "slow" | "normal" | "fast";
 
 export type Settings = {
-  /** Where trips start: the visitor's location, the fixed default (ul. Długa 11), or an address they typed. */
   startMode: StartMode;
-  /** The address the visitor typed and found; coordinates are set only after a successful lookup. */
   manualAddress: string;
   manualLat: number | null;
   manualLng: number | null;
-  /** "now" plans from the current time of day, "set" from startTime. */
   timeMode: TimeMode;
-  /** "HH:mm" */
   startTime: string;
   walkPace: WalkPace;
 };
@@ -28,7 +24,6 @@ export const DEFAULT_SETTINGS: Settings = {
   walkPace: "normal",
 };
 
-/** Short label for the start choice, shown in the chat's trip-context bar. */
 export function startLabel(s: Settings): string {
   if (s.startMode === "device") return "Current location";
   if (s.startMode === "default") return "ul. Długa 11";
@@ -39,7 +34,6 @@ export function timeLabel(s: Settings): string {
   return s.timeMode === "now" ? "Leaving now" : `Leaving ${s.startTime}`;
 }
 
-/** The "HH:mm" the planner should start from. */
 export function tripTime(s: Settings): string {
   if (s.timeMode === "set") return s.startTime;
   const now = new Date();
@@ -78,7 +72,6 @@ export function useSettings(): [Settings, (patch: Partial<Settings>) => void] {
       try {
         localStorage.setItem(KEY, JSON.stringify(next));
       } catch {
-        /* settings just won't persist */
       }
       return next;
     });

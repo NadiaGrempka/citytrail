@@ -5,7 +5,6 @@ export type StartPoint = {
   lng: number;
   label: string;
   source: "device" | "default";
-  /** Why the default was used instead of the device location. */
   reason?: "denied" | "unavailable" | "outside" | "chosen";
 };
 
@@ -14,7 +13,6 @@ const defaultStart = (reason: StartPoint["reason"]): StartPoint => ({ ...DEFAULT
 const inGdansk = (lat: number, lng: number) =>
   lat >= GDANSK_BOUNDS.minLat && lat <= GDANSK_BOUNDS.maxLat && lng >= GDANSK_BOUNDS.minLng && lng <= GDANSK_BOUNDS.maxLng;
 
-/** Asks the browser for the visitor's location (shows the permission prompt) and falls back to ul. Długa 11. */
 export function resolveStart(
   mode: "device" | "default" | "manual" = "device",
   manual?: { lat: number; lng: number; label: string } | null,

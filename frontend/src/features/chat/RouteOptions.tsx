@@ -7,17 +7,16 @@ import {
   type RouteOverlay,
 } from "../../api/transit";
 import type { LngLat } from "../../api/routing";
+import "./RouteOptions.css";
 
 type Props = {
   from: LngLat;
   to: LngLat;
   destination: string;
-  /** ISO time to depart. */
   whenIso: string;
   onPick: (overlay: RouteOverlay | null) => void;
 };
 
-/** "All the ways to get there": walk, tram, bus and train, each drawable on the map. */
 export function RouteOptions({ from, to, destination, whenIso, onPick }: Props) {
   const [options, setOptions] = useState<RouteOption[] | null>(null);
   const [failed, setFailed] = useState(false);
@@ -37,7 +36,6 @@ export function RouteOptions({ from, to, destination, whenIso, onPick }: Props) 
         setFailed(true);
       });
     return () => controller.abort();
-    // The destination and start decide the options; a new departure time alone does not refetch.
   }, [from[0], from[1], to[0], to[1]]);
 
   function pick(option: RouteOption) {

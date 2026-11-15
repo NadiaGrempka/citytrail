@@ -8,7 +8,6 @@ function initialTheme(): Theme {
     const saved = localStorage.getItem(KEY);
     if (saved === "light" || saved === "dark") return saved;
   } catch {
-    /* storage unavailable */
   }
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
@@ -21,7 +20,6 @@ export function useTheme(): [Theme, (t: Theme) => void] {
     try {
       localStorage.setItem(KEY, theme);
     } catch {
-      /* theme just won't persist */
     }
   }, [theme]);
 

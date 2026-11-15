@@ -1,9 +1,9 @@
 import { useEffect } from "react";
 import { CheckIcon } from "./icons";
+import "./Toast.css";
 
 type Props = { message: string | null; onDone: () => void };
 
-/** Bottom-centre confirmation pill; dismisses itself after 2.4 s. */
 export function Toast({ message, onDone }: Props) {
   useEffect(() => {
     if (!message) return;

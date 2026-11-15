@@ -1,0 +1,40 @@
+.thumb {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border-radius: 18px;
+  background: linear-gradient(145deg, #c9d8c4, #8fae8c);
+}
+
+.thumb--food {
+  background: linear-gradient(145deg, #f0d9b5, #c98f5a);
+}
+
+.thumb--store {
+  background: linear-gradient(145deg, #e6c6d6, #a77c9c);
+}
+
+.thumb--event {
+  background: linear-gradient(145deg, #b9a7e3, #5b4a9e);
+}
+
+.thumb--landmark {
+  background: linear-gradient(145deg, #bcd9c0, #5f8f6d);
+}
+
+.thumb img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.thumb-initial {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: rgb(255 255 255 / 0.75);
+  font-size: 2.2rem;
+}

@@ -6,12 +6,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/** Tells the frontend which intent parser is active, for the Settings screen. */
 @RestController
 @RequestMapping("/api")
 public class InfoController {
 
-    /** model is null when the AI parser is off. */
     public record Info(boolean aiParser, String model) {
     }
 

@@ -1,6 +1,7 @@
 import { UserIcon } from "../components/icons";
 import { INTERESTS } from "../interests";
 import { startLabel, type Settings } from "../settings";
+import "./PreferencesPage.css";
 
 type Props = {
   selected: string[];

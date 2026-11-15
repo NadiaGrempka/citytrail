@@ -1,17 +1,17 @@
 import { useCallback, useEffect, useState, type CSSProperties } from "react";
 import { fetchPlaces, getTrip, listTrips } from "./api/client";
 import { ChatBox, type GuideRequest, type OpenedTrip } from "./features/chat/ChatBox";
-import { PageShell, ThemeButton } from "./components/PageShell";
-import { CompassIcon } from "./components/icons";
-import { humanize, placeMeta } from "./placeInfo";
+import { PageShell } from "./components/PageShell";
 import type { RouteOverlay } from "./api/transit";
 import { useFavorites } from "./favorites";
 import { useInterests } from "./interests";
 import { Toast } from "./components/Toast";
 import { MenuButton, type Page } from "./features/menu/MenuButton";
 import { MapView } from "./features/map/MapView";
+import { MapActions } from "./features/map/MapActions";
+import { PickCard } from "./features/map/PickCard";
 import { useTrail } from "./features/map/useTrail";
-import type { StartPoint } from "./location";
+import { resolveStart, type StartPoint } from "./location";
 import { DiscoverPage } from "./pages/DiscoverPage";
 import { PlaceDetailPage } from "./pages/PlaceDetailPage";
 import { PreferencesPage } from "./pages/PreferencesPage";
@@ -22,7 +22,6 @@ import { useSettings } from "./settings";
 import { useTheme } from "./theme";
 import type { Place, Plan, Stop } from "./types";
 import "./App.css";
-import "./pages.css";
 
 const NO_STOPS: Stop[] = [];
 const MIN_PANEL_WIDTH = 320;
@@ -67,7 +66,6 @@ function App() {
       .catch((e: unknown) => console.warn("Could not load places:", e));
   }, []);
 
-  // Saved-trip count for the menu badge: refreshed on load, after saving a trip, and when changing screens.
   useEffect(() => {
     listTrips()
       .then((list) => setTripCount(list.length))
@@ -78,9 +76,30 @@ function App() {
     try {
       localStorage.setItem(WIDTH_KEY, String(panelWidth));
     } catch {
-      /* storage unavailable: width just won't persist */
     }
   }, [panelWidth]);
+
+  const updateStart = useCallback((next: StartPoint) => {
+    setStart((cur) =>
+      cur && cur.lat === next.lat && cur.lng === next.lng && cur.label === next.label && cur.source === next.source
+        ? cur
+        : next,
+    );
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const manual =
+      settings.manualLat !== null && settings.manualLng !== null
+        ? { lat: settings.manualLat, lng: settings.manualLng, label: settings.manualAddress.trim() }
+        : null;
+    resolveStart(settings.startMode, manual)
+      .then((s) => !cancelled && updateStart(s))
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [settings.startMode, settings.manualLat, settings.manualLng, updateStart]);
 
   function openTrip(id: string) {
     getTrip(id)
@@ -97,13 +116,11 @@ function App() {
     setPage("place");
   }
 
-  /** Hand a message to the guide and go back to the map. */
   function askGuide(text: string, send: boolean) {
     setRequest({ key: Date.now(), text, send });
     setPage("map");
   }
 
-  /** "Find something fun": any place at all, picked at random. */
   function rollPlace() {
     if (places.length === 0) return;
     setPick({ key: Date.now(), place: places[Math.floor(Math.random() * places.length)] });
@@ -126,7 +143,7 @@ function App() {
         onWidthChange={setPanelWidth}
         onResizingChange={setResizing}
         onFirstSend={() => setDocked(true)}
-        onStartResolved={setStart}
+        onStartResolved={updateStart}
         onPlan={(p) => {
           setPlan(p);
           setRouteOverlay(null);
@@ -139,45 +156,26 @@ function App() {
         onTripSaved={() => setToast("Trip saved")}
       />
       {page === "map" && (
-        <div className="map-actions">
-          <ThemeButton theme={theme} onChange={setTheme} />
-          <button type="button" className="find-fun" onClick={rollPlace} disabled={places.length === 0}>
-            <CompassIcon size={18} /> Find something fun
-          </button>
-        </div>
+        <MapActions theme={theme} onThemeChange={setTheme} onFindFun={rollPlace} disabled={places.length === 0} />
       )}
       {page === "map" && pick && (
-        <section className="pick-card" aria-label="Random pick">
-          <button type="button" className="pick-card-close" aria-label="Close" onClick={() => setPick(null)}>
-            ×
-          </button>
-          <p className="pick-card-kind">{humanize(pick.place.subcategory)}</p>
-          <h2>{pick.place.name}</h2>
-          <p className="pick-card-meta">{placeMeta(pick.place)}</p>
-          <div className="pick-card-actions">
-            <button type="button" onClick={() => openPlace(pick.place.id)}>
-              Details
-            </button>
-            <button type="button" onClick={() => askGuide(pick.place.name, true)}>
-              Show me the way
-            </button>
-            <button type="button" onClick={rollPlace}>
-              Roll again
-            </button>
-          </div>
-        </section>
+        <PickCard
+          place={pick.place}
+          onDetails={() => openPlace(pick.place.id)}
+          onShowRoute={() => askGuide(pick.place.name, true)}
+          onRollAgain={rollPlace}
+          onClose={() => setPick(null)}
+        />
       )}
       {page === "place" && (
-        <div className="page page--detail">
-          <PlaceDetailPage
-            place={place}
-            saved={place ? favorites.has(place.id) : false}
-            onToggleSaved={() => place && favorites.toggle(place.id)}
-            onBack={() => setPage(cameFrom)}
-            onShowRoute={(p) => askGuide(p.name, true)}
-            onAskGuide={(p) => askGuide(`a cafe near ${p.name}`, false)}
-          />
-        </div>
+        <PlaceDetailPage
+          place={place}
+          saved={place ? favorites.has(place.id) : false}
+          onToggleSaved={() => place && favorites.toggle(place.id)}
+          onBack={() => setPage(cameFrom)}
+          onShowRoute={(p) => askGuide(p.name, true)}
+          onAskGuide={(p) => askGuide(`a cafe near ${p.name}`, false)}
+        />
       )}
       {page !== "map" && page !== "place" && (
         <PageShell theme={theme} onThemeChange={setTheme} onOpenMap={() => setPage("map")}>
@@ -218,9 +216,6 @@ function App() {
       )}
       <MenuButton page={page} onNavigate={setPage} savedCount={favorites.ids.length} tripCount={tripCount} />
       <Toast message={toast} onDone={clearToast} />
-      {/*<p className="status" role="status">*/}
-      {/*  {error ? `Backend unreachable: ${error}` : `${places.length} places loaded from the backend`}*/}
-      {/*</p>*/}
     </main>
   );
 }

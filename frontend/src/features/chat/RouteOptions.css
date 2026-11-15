@@ -1,0 +1,84 @@
+.route-options {
+  margin-top: 1.25rem;
+}
+
+.route-options h3 {
+  margin: 0 0 0.6rem;
+  color: #d9f36a;
+  font-size: 0.65rem;
+  font-weight: 500;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.route-options ul {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.route-card {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  width: 100%;
+  padding: 0.7rem 1rem;
+  border: 1px solid rgb(255 255 255 / 0.3);
+  border-radius: 18px;
+  background: rgb(0 0 0 / 0.08);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.route-card:hover,
+.route-card:focus-visible {
+  background: rgb(255 255 255 / 0.18);
+}
+
+.route-card.is-selected {
+  border-color: #d9f36a;
+  background: rgb(217 243 106 / 0.18);
+}
+
+.route-dot {
+  flex: none;
+  width: 0.8rem;
+  height: 0.8rem;
+  border: 2px solid #fff;
+  border-radius: 50%;
+}
+
+.route-main {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  line-height: 1.3;
+}
+
+.route-main small {
+  font-size: 0.78rem;
+  opacity: 0.85;
+}
+
+.route-steps {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.route-time {
+  font-size: 1.05rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.route-note {
+  margin: 0.6rem 0 0;
+  font-size: 0.82rem;
+  opacity: 0.85;
+}

@@ -1,0 +1,55 @@
+.saved-rows {
+  display: grid;
+  gap: 0.75rem;
+  margin: 2rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.saved-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  padding: 0.75rem 1.25rem 0.75rem 0.75rem;
+  border: 0;
+  border-radius: 22px;
+  background: var(--pg-card);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: filter 0.15s;
+}
+
+.saved-row:hover,
+.saved-row:focus-visible {
+  filter: brightness(0.96);
+}
+
+.saved-row-thumb.thumb {
+  flex: 0 0 auto;
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: 16px;
+}
+
+.saved-row-text {
+  display: grid;
+  flex: 1;
+  gap: 0.15rem;
+}
+
+.saved-row-text .eyebrow {
+  margin: 0;
+}
+
+.saved-row-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.saved-row-meta {
+  color: var(--pg-muted);
+  font-size: 0.85rem;
+}

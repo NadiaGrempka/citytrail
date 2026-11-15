@@ -24,13 +24,11 @@ public class PlanService {
     private static final int MAX_TEXT_LENGTH = 500;
     private static final int DEFAULT_START_MINUTES = 14 * 60;
 
-    // Rough bounding box around Gdańsk; start points outside it fall back to the default.
     private static final double MIN_LAT = 54.28;
     private static final double MAX_LAT = 54.46;
     private static final double MIN_LNG = 18.45;
     private static final double MAX_LNG = 18.75;
 
-    // "near the museum", "next to Józef K.": where the stop should be, not a stop of its own.
     private static final Pattern REFERENCE = Pattern.compile(
             "\\b(?:near|next to|close to|around|beside)\\s+(?:(?:the|that|this)\\s+)?(?<target>.*?)"
                     + "(?=\\s+(?:and|then|after|before)\\b|[,;.!?]|$)",
@@ -106,7 +104,6 @@ public class PlanService {
                 Planner.walkSpeed(request.walkPace()));
     }
 
-    /** Re-plans a saved trip from its stop ids alone (no text, no AI): same stops, same order. */
     public Plan replan(List<String> stopIds, boolean returnHome, Double startLat, Double startLng) {
         List<Place> route = previousPlaces(stopIds);
         if (route.isEmpty()) {
@@ -122,7 +119,6 @@ public class PlanService {
         return planner.plan(intent, start[0], start[1], DEFAULT_START_MINUTES, "saved");
     }
 
-    /** The given start point if it lies in the Gdańsk box, otherwise the configured default. */
     private double[] startPoint(Double lat, Double lng) {
         if (lat != null && lng != null
                 && lat >= MIN_LAT && lat <= MAX_LAT && lng >= MIN_LNG && lng <= MAX_LNG) {
@@ -131,7 +127,6 @@ public class PlanService {
         return new double[] {defaultStartLat, defaultStartLng};
     }
 
-    /** The stops of the route so far, in order (unknown ids are ignored). */
     private List<Place> previousPlaces(List<String> previousStopIds) {
         List<Place> places = new ArrayList<>();
         if (previousStopIds == null) {
@@ -146,10 +141,6 @@ public class PlanService {
         return places;
     }
 
-    /**
-     * What "near ..." points at: a place named in the text, "it"/"there" (the last stop), or a kind of
-     * place that is already in the route ("near the museum"). Null when it cannot be resolved.
-     */
     private Place resolveReference(String phrase, List<Place> route) {
         String target = phrase == null ? "" : phrase.trim();
         if (target.isEmpty() || LAST_STOP_WORDS.matcher(target).matches()) {
@@ -175,7 +166,6 @@ public class PlanService {
         return null;
     }
 
-    /** The AI parser's reading of the request, or null when it is off, fails, or finds nothing to plan. */
     private Intent fromLanguageModel(String text, List<Place> route) {
         LlmIntentParser llm = llmParser.getIfAvailable();
         if (llm == null) {
@@ -193,11 +183,9 @@ public class PlanService {
         return null;
     }
 
-    /** Offline reading of the request: keywords, place names and "near X" clauses. */
     private Intent fromKeywords(String text, List<Place> route) {
         boolean followUp = !route.isEmpty();
 
-        // Pull "near X" clauses out of the text so their words do not become stops, and remember X.
         StringBuilder cleaned = new StringBuilder();
         List<Reference> references = new ArrayList<>();
         Matcher matcher = REFERENCE.matcher(text);
@@ -205,12 +193,11 @@ public class PlanService {
         while (matcher.find()) {
             Place target = resolveReference(matcher.group("target"), route);
             if (target == null && !followUp) {
-                continue; // first message such as "a cafe near a museum": both are stops, nothing to point at yet
+                continue;
             }
             cleaned.append(text, last, matcher.start()).append(' ');
             last = matcher.end();
             if (target != null) {
-                // The clause belongs to the stop mentioned right before it.
                 int stopsBefore = keywordParser.parse(cleaned.toString()).slots().size();
                 references.add(new Reference(Math.max(0, stopsBefore - 1), target.id()));
             }

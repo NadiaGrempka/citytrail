@@ -1,0 +1,130 @@
+.panel {
+  display: grid;
+  gap: 1.25rem;
+  margin-bottom: 1rem;
+  padding: 1.75rem 2rem;
+  border-radius: 25px;
+  background: var(--pg-card);
+}
+
+.panel-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.panel-icon {
+  padding-top: 0.2rem;
+  color: var(--pg-muted);
+}
+
+.panel-heading h2 {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 400;
+}
+
+.panel-heading p {
+  margin: 0.25rem 0 0;
+  color: var(--pg-muted);
+  font-size: 13px;
+}
+
+.panel-action {
+  margin-left: auto;
+}
+
+.panel-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.segmented {
+  display: inline-flex;
+  gap: 0.25rem;
+  width: fit-content;
+  max-width: 100%;
+  padding: 0.3rem;
+  border-radius: 999px;
+  background: var(--pg-track);
+}
+
+.segmented button {
+  padding: 0.7rem 1.6rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.segmented button:hover:not(.is-active),
+.segmented button:focus-visible {
+  background: var(--pg-track);
+}
+
+.segmented button.is-active {
+  background: var(--pg-action);
+  color: var(--pg-action-text);
+}
+
+.field {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.field label {
+  font-size: 0.85rem;
+}
+
+.field-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.field input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--pg-line);
+  border-radius: 14px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+
+.field input[type="time"] {
+  flex: none;
+  width: fit-content;
+}
+
+.field-hint {
+  margin: 0;
+  color: var(--pg-muted);
+  font-size: 0.8rem;
+}
+
+@media (max-width: 720px) {
+  .panel {
+      padding: 1.25rem;
+  }
+
+  .panel-heading {
+      flex-wrap: wrap;
+  }
+
+  .segmented {
+      display: flex;
+  }
+
+  .segmented button {
+      flex: 1;
+      padding: 0.7rem 0.5rem;
+  }
+}

@@ -4,9 +4,10 @@ import { describeStart, resolveStart, type StartPoint } from "../../location";
 import { ClockIcon, PinIcon, SparkIcon, CheckIcon } from "../../components/icons";
 import { startLabel, timeLabel, tripTime, type Settings } from "../../settings";
 import type { Plan, TripView } from "../../types";
-import { ecoSummary } from "./eco";
+import { PlanView } from "./PlanView";
 import { RouteOptions } from "./RouteOptions";
 import type { RouteOverlay } from "../../api/transit";
+import "./ChatBox.css";
 
 type Turn = {
   prompt: string;
@@ -14,12 +15,9 @@ type Turn = {
   start?: StartPoint;
   plan?: Plan;
   error?: string;
-  /** True for a trip opened from "My trips": it is already saved. */
   saved?: boolean;
 };
 
-/** A trip the visitor opened from the menu; key changes on every open so the same trip can be reopened. */
-/** A message handed to the guide from another screen (key changes on every request). */
 export type GuideRequest = { key: number; text: string; send: boolean };
 
 export type OpenedTrip = { key: number; view: TripView };
@@ -33,11 +31,9 @@ type Props = {
   onFirstSend: () => void;
   onStartResolved: (start: StartPoint) => void;
   onPlan: (plan: Plan | null) => void;
-  /** The route option picked in the chat (drawn on the map), or null to clear it. */
   onRouteOption: (overlay: RouteOverlay | null) => void;
   openedTrip: OpenedTrip | null;
   settings: Settings;
-  /** Text sent in from another screen: either sent straight away or placed in the input box. */
   request: GuideRequest | null;
   onEditSettings: () => void;
   onTripSaved: () => void;
@@ -45,7 +41,6 @@ type Props = {
 
 const KEY_STEP = 24;
 
-/** The next occurrence of the trip time (today, or tomorrow when it has already passed), as an ISO string. */
 function departureIso(settings: Settings): string {
   const [h, m] = tripTime(settings).split(":").map(Number);
   const d = new Date();
@@ -62,18 +57,15 @@ export function ChatBox({ docked, width, minWidth, onWidthChange, onResizingChan
   const dragRight = useRef(0);
   const startRef = useRef<Promise<StartPoint> | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
-  // The plan that was last saved from the header button; a newer plan makes the button available again.
   const [savedPlan, setSavedPlan] = useState<Plan | null>(null);
   const [saving, setSaving] = useState(false);
   const latestPlan = [...turns].reverse().find((t) => t.plan)?.plan ?? null;
   const latestStart = [...turns].reverse().find((t) => t.start)?.start;
 
-  // A different start choice in Settings means the next message asks again instead of reusing the old answer.
   useEffect(() => {
     startRef.current = null;
   }, [settings.startMode, settings.manualLat, settings.manualLng]);
 
-  // Opening a saved trip replaces the conversation with that trip; follow-ups then extend it.
   useEffect(() => {
     if (!openedTrip) return;
     const { trip, plan } = openedTrip.view;
@@ -86,10 +78,8 @@ export function ChatBox({ docked, width, minWidth, onWidthChange, onResizingChan
     setTurns([{ prompt: trip.title, status: "done", plan, saved: true }]);
     setSavedPlan(plan);
     onPlan(plan);
-    // Only a new open (new key) should reset the conversation, not changes to the callbacks.
   }, [openedTrip?.key]);
 
-  // A request from another screen ("Show me the way", "Ask the guide").
   useEffect(() => {
     if (!request) return;
     if (request.send) {
@@ -98,7 +88,6 @@ export function ChatBox({ docked, width, minWidth, onWidthChange, onResizingChan
       setText(request.text);
       inputRef.current?.focus();
     }
-    // Only a new request (new key) should act, not changes to the handlers.
   }, [request?.key]);
 
   const maxWidth = () => Math.round(window.innerWidth * 0.7);
@@ -118,7 +107,6 @@ export function ChatBox({ docked, width, minWidth, onWidthChange, onResizingChan
     const patch = (p: Partial<Turn>) =>
       setTurns((t) => t.map((x, i) => (i === t.length - 1 ? { ...x, ...p } : x)));
     try {
-      // Ask for the location once per session; later messages reuse the answer.
       startRef.current ??= resolveStart(
         settings.startMode,
         settings.manualLat !== null && settings.manualLng !== null
@@ -128,7 +116,6 @@ export function ChatBox({ docked, width, minWidth, onWidthChange, onResizingChan
       const start = await startRef.current;
       onStartResolved(start);
       patch({ start, status: "planning" });
-      // A follow-up extends the latest route; "New trip" clears it.
       const last = [...turns].reverse().find((t) => t.plan)?.plan;
       const previous = last
         ? { stopIds: last.stops.map((s) => s.place.id), returnHome: last.intent.returnHome }
@@ -334,43 +321,5 @@ export function ChatBox({ docked, width, minWidth, onWidthChange, onResizingChan
         </button>
       </div>
     </form>
-  );
-}
-
-function PlanView({ plan }: { plan: Plan }) {
-  const eco = ecoSummary(plan);
-
-  return (
-    <div className="chat-reply">
-      <p>
-        {plan.date}, {plan.startTime} to {plan.endTime} (about {plan.totalMinutes} min, understood by {plan.parsedBy})
-      </p>
-      <ol>
-        {plan.stops.map((s) => (
-          <li key={s.place.id}>
-            {s.arrive} {s.place.name} <small>({s.legFromPrevious.via})</small>
-            {s.event && <small> - {s.event.title}</small>}
-            {s.notes.map((n) => (
-              <small key={n}> {n}</small>
-            ))}
-          </li>
-        ))}
-      </ol>
-      {plan.returnLeg && (
-        <p>
-          Ride home: {plan.returnLeg.via} (about {plan.returnLeg.minutes} min)
-        </p>
-      )}
-      {plan.warnings.map((w) => (
-        <p key={w}>{w}</p>
-      ))}
-      {eco && (
-        <p className="eco-badge" title="Rough estimate: car 170 g/km, city transit 60 g/km, walking 0">
-          {eco.savedGrams > 0
-            ? `About ${eco.savedGrams} g CO₂ saved vs driving this route`
-            : "About the same CO₂ as driving this route"}
-        </p>
-      )}
-    </div>
   );
 }

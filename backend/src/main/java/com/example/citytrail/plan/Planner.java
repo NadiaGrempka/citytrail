@@ -16,20 +16,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-/**
- * Deterministic planner (no AI): picks real places for each slot, estimates travel, and builds a timeline.
- *
- * Rules:
- *  - A slot can name a specific place (placeId); that place is used as is.
- *  - A slot can say "near X" (nearPlaceId); it is then picked near X rather than near the previous stop.
- *  - Event-category places without scheduled events (museums) are planned like any other nearby stop.
- *  - If the intent has an event slot with a matching scheduled event, that event is chosen first and becomes the anchor. The plan is
- *    scheduled on the event's day and every other stop is picked near the event venue ("what's nearby").
- *  - Without an event, each stop is picked near the previous stop (the start point for the first one).
- *  - Score = 10 per matching tag, minus 1 per 100 m from the reference point (events: minus 1 per day away).
- *  - Places tagged "sunday-only" are skipped unless the plan day is a Sunday.
- *  - Travel times are estimates from distance and each place's mocked nearest-stop info.
- */
 @Component
 public class Planner {
 
@@ -53,7 +39,6 @@ public class Planner {
     private record Candidate(Place place, UpcomingEvent event) {
     }
 
-    /** Walking speed in metres per minute for "slow", "normal" or "fast" (anything else counts as normal). */
     public static int walkSpeed(String pace) {
         if (pace == null) {
             return WALK_M_PER_MIN;
@@ -83,7 +68,7 @@ public class Planner {
             if (slot.placeId() != null) {
                 Candidate named = namedCandidate(slot, used, null);
                 if (named != null && named.event() != null) {
-                    candidate = named; // a named venue with a scheduled event anchors the plan
+                    candidate = named;
                 }
             } else if ("event".equals(slot.category())) {
                 candidate = bestEvent(slot, used, null);
@@ -117,8 +102,6 @@ public class Planner {
                         chosen = bestEvent(slot, used, planDay);
                     }
                     if (chosen == null) {
-                        // Also covers event-category places without scheduled events, such as museums.
-                        // "near X" wins, then the event venue the plan is built around, then the previous stop.
                         Place near = slot.nearPlaceId() == null
                                 ? null
                                 : repository.findById(slot.nearPlaceId()).orElse(null);
@@ -186,7 +169,6 @@ public class Planner {
                 List.copyOf(warnings));
     }
 
-    /** The place the visitor named, with its event on the given day (any day if null) when it has one. */
     private Candidate namedCandidate(Slot slot, Set<String> used, Integer day) {
         Place place = repository.findAll().stream()
                 .filter(p -> p.id().equals(slot.placeId()) && !used.contains(p.id()))
@@ -205,10 +187,6 @@ public class Planner {
         return new Candidate(place, event);
     }
 
-    /**
-     * Best place for the slot near the reference point. untimedOnly keeps just places without scheduled
-     * events (museums, exhibitions) and, when the slot has tags, requires at least one to match.
-     */
     private Place bestPlace(Slot slot, Set<String> used, double refLat, double refLng, boolean sunday,
                             boolean untimedOnly) {
         return repository.findAll().stream()
@@ -224,7 +202,6 @@ public class Planner {
                 .orElse(null);
     }
 
-    /** Best (venue, event) pair for the slot. If day is not null, only events on that day are considered. */
     private Candidate bestEvent(Slot slot, Set<String> used, Integer day) {
         Candidate best = null;
         double bestScore = Double.NEGATIVE_INFINITY;
@@ -238,7 +215,7 @@ public class Planner {
                 }
                 int matches = overlap(slot, place, event);
                 if (matches == 0 && !slot.tags().isEmpty()) {
-                    continue; // asked for a specific kind of event, and this is not it
+                    continue;
                 }
                 double score = matches * 10.0 - event.dayOffset();
                 if (score > bestScore) {
@@ -264,10 +241,6 @@ public class Planner {
         return count;
     }
 
-    /**
-     * Estimate: short hops are walked; longer ones are a walk to the nearest stop, a ride at ~27 km/h,
-     * a wait, and a walk from the stop. A null Transit means "assume a short walk at that end".
-     */
     private static Leg leg(double fromLat, double fromLng, Transit fromTransit,
                            double toLat, double toLng, Transit toTransit, int walkMPerMin) {
         int distance = (int) Math.round(Geo.meters(fromLat, fromLng, toLat, toLng));

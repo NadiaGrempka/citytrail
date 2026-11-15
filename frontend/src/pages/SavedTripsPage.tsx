@@ -1,14 +1,15 @@
 import { useEffect, useState, type SubmitEvent } from "react";
 import { deleteTrip, listTrips, renameTrip } from "../api/client";
+import { EmptyState } from "../components/EmptyState";
 import { PlaceThumb } from "../components/PlaceThumb";
 import { RouteIcon, TrashIcon } from "../components/icons";
 import type { Place, Trip } from "../types";
+import "./SavedTripsPage.css";
 
 type Props = {
   places: Place[];
   onOpen: (id: string) => void;
   onOpenMap: () => void;
-  /** Reports how many trips there are, so the menu badge stays right after deleting. */
   onCountChange: (count: number) => void;
 };
 
@@ -64,16 +65,13 @@ export function SavedTripsPage({ places, onOpen, onOpenMap, onCountChange }: Pro
       {!error && trips === null && <p className="page-lede">Loading your trips…</p>}
 
       {trips && trips.length === 0 && (
-        <div className="empty-state">
-          <span className="empty-icon">
-            <RouteIcon size={26} />
-          </span>
-          <h2>No saved trips yet</h2>
-          <p>Ask the guide for ideas, then tap “Save trip” in the chat.</p>
-          <button type="button" className="btn-primary" onClick={onOpenMap}>
-            Open the guide
-          </button>
-        </div>
+        <EmptyState
+          icon={<RouteIcon size={26} />}
+          title="No saved trips yet"
+          text="Ask the guide for ideas, then tap “Save trip” in the chat."
+          actionLabel="Open the guide"
+          onAction={onOpenMap}
+        />
       )}
 
       <ul className="trip-cards">

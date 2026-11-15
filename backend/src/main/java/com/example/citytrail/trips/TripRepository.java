@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-/** Saved trips in the embedded H2 database (see schema.sql). Data lives until the backend stops. */
 @Repository
 public class TripRepository {
 
@@ -53,7 +52,6 @@ public class TripRepository {
                 .optional();
     }
 
-    /** True when a trip with this id existed and was renamed. */
     public boolean rename(String id, String title) {
         return jdbc.sql("UPDATE trips SET title = :title WHERE id = :id")
                 .param("title", title)
@@ -61,12 +59,10 @@ public class TripRepository {
                 .update() > 0;
     }
 
-    /** True when a trip with this id existed and was removed. */
     public boolean delete(String id) {
         return jdbc.sql("DELETE FROM trips WHERE id = :id").param("id", id).update() > 0;
     }
 
-    /** Removes every saved trip and returns how many there were. */
     public int deleteAll() {
         return jdbc.sql("DELETE FROM trips").update();
     }
