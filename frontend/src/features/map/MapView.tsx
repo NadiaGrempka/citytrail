@@ -246,7 +246,7 @@ export function MapView({ theme, start, stops, trail, focus, route }: Props) {
 
     const bounds = new LngLatBounds();
     trail.forEach((s) => s.coords.forEach((c) => bounds.extend(c)));
-    map.fitBounds(bounds, { padding: { top: 100, bottom: 160, left: 80, right: 80 }, maxZoom: 16, duration: 1200 });
+    map.fitBounds(bounds, { padding: { top: 100, bottom: 330, left: 80, right: 80 }, maxZoom: 16, duration: 1200 });
 
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       drawTrailRef.current(map, toCollection(trail, lengths, total));

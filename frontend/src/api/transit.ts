@@ -121,6 +121,9 @@ async function plan(from: LngLat, to: LngLat, whenIso: string, transitModes: str
     transitModes,
     directModes: "WALK",
     detailedLegs: "true",
+    maxMatchingDistance: "1000",
+    maxPreTransitTime: "3600",
+    maxPostTransitTime: "3600",
   });
   const res = await fetch(`${PLAN_URL}?${params}`, { signal });
   if (!res.ok) throw new Error(`Journey planner answered ${res.status}`);
@@ -157,4 +160,47 @@ export async function fetchRouteOptions(
     options.push(option);
   });
   return options.sort((a, b) => MODE_ORDER.indexOf(a.mode) - MODE_ORDER.indexOf(b.mode));
+}
+
+export type PathPiece = { mode: RouteMode; coords: LngLat[] };
+
+export type TransitAlternative = {
+  label: string;
+  minutes: number;
+  depart: string;
+  arrive: string;
+  transfers: number;
+  pieces: PathPiece[];
+};
+
+const MAX_ALTERNATIVES = 3;
+
+export async function fetchTransitAlternatives(
+  from: LngLat,
+  to: LngLat,
+  whenIso: string,
+  signal: AbortSignal,
+): Promise<TransitAlternative[]> {
+  const result = await plan(from, to, whenIso, "TRAM,BUS,RAIL", signal);
+  const byLabel = new Map<string, TransitAlternative>();
+  for (const itinerary of result.itineraries ?? []) {
+    const option = toOption("train", itinerary);
+    const rides = option.legs.filter((l) => l.mode !== "walk");
+    const pieces = option.legs.filter((l) => l.coords.length > 1).map((l): PathPiece => ({ mode: l.mode, coords: l.coords }));
+    if (rides.length === 0 || pieces.length === 0) continue;
+    const label = rides.map((l) => l.line ?? MODE_LABEL[l.mode]).join(" → ");
+    const alternative: TransitAlternative = {
+      label,
+      minutes: option.minutes,
+      depart: option.depart,
+      arrive: option.arrive,
+      transfers: option.transfers,
+      pieces,
+    };
+    const known = byLabel.get(label);
+    if (!known || alternative.minutes < known.minutes) byLabel.set(label, alternative);
+  }
+  const list = [...byLabel.values()].sort((a, b) => a.minutes - b.minutes).slice(0, MAX_ALTERNATIVES);
+  if (list.length === 0) throw new Error("No public transport connection found");
+  return list;
 }

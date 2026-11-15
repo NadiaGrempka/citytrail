@@ -6,6 +6,7 @@ CityTrail is a trip planner for visitors to Gdańsk. You type what you feel like
 
 - **Plan a trip by writing a wish.** An AI parser understands the sentence, including misspelled place names, "near X" and follow-ups ("and a park near the museum"). The route grows with every message; "New trip" starts over.
 - **Map with the route.** Stops appear as lettered dots, the walking legs follow real streets, and the start point (your location or one you chose) is on the map from the first second. Light and dark map styles.
+- **Choose the ride.** When a trip needs a tram, bus or train, a small card on the map offers up to three connections for that ride (line, minutes, times, changes). Pick one and the route on the map follows it.
 - **All ways to get there.** For a single destination the chat lists walking, tram, bus and train options with duration, times, line numbers and changes. Tapping an option draws it on the map in its own colour.
 - **Find something fun.** One button picks a random place, flies the map there (keeping your location in view) and offers Details, Show me the way and Roll again.
 - **Discover, Saved places and Your preferences.** Browse places with filters (Tonight, Coffee, Culture, Outside), heart favourites, open a place page, and pick interests that reorder the list.

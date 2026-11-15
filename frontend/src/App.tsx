@@ -10,6 +10,7 @@ import { MenuButton, type Page } from "./features/menu/MenuButton";
 import { MapView } from "./features/map/MapView";
 import { MapActions } from "./features/map/MapActions";
 import { PickCard } from "./features/map/PickCard";
+import { PathSwitcher, type PathGroup } from "./features/map/PathSwitcher";
 import { useTrail } from "./features/map/useTrail";
 import { resolveStart, type StartPoint } from "./location";
 import { DiscoverPage } from "./pages/DiscoverPage";
@@ -44,6 +45,19 @@ function App() {
   const [start, setStart] = useState<StartPoint | null>(null);
   const [plan, setPlan] = useState<Plan | null>(null);
   const trail = useTrail(plan, start);
+  const pathGroups: PathGroup[] =
+    trail.legs?.flatMap((leg, i) =>
+      leg.alternatives.length > 1
+        ? [
+            {
+              legIndex: i,
+              title: plan && i < plan.stops.length ? `Ride to ${plan.stops[i].place.name}` : "Ride home",
+              alternatives: leg.alternatives,
+              selected: trail.choices[i] ?? 0,
+            },
+          ]
+        : [],
+    ) ?? [];
   const [docked, setDocked] = useState(false);
   const [resizing, setResizing] = useState(false);
   const [panelWidth, setPanelWidth] = useState(loadWidth);
@@ -134,8 +148,9 @@ function App() {
   return (
     <main className={docked ? "app app--docked" : "app"} style={workspaceStyle}>
       <div className={resizing ? "workspace workspace--resizing" : "workspace"}>
-        <MapView theme={theme} start={start} stops={plan?.stops ?? NO_STOPS} trail={trail} focus={pick} route={routeOverlay} />
+        <MapView theme={theme} start={start} stops={plan?.stops ?? NO_STOPS} trail={trail.segments} focus={pick} route={routeOverlay} />
       </div>
+      <PathSwitcher groups={pathGroups} onSelect={trail.choose} />
       <ChatBox
         docked={docked}
         width={panelWidth}
