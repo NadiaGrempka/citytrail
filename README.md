@@ -1,6 +1,7 @@
 # CityTrail
 
 CityTrail is a trip planner for visitors to Gdańsk. You type what you feel like doing ("jozef k, then a nearby museum", "live music tonight and a ride home") and the app plans the stops with times, draws the walking route on a map, and shows every way to get to a place: on foot, by tram, bus or train. Built as a solo MVP for the Xelerit winter internship task (transport theme).
+For now the application is only set for Gdańsk and instead of photos I decided to use placeholder background.
 
 ## What the app does
 
