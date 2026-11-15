@@ -19,11 +19,12 @@ type Props = {
   onResizingChange: (resizing: boolean) => void;
   onFirstSend: () => void;
   onStartResolved: (start: StartPoint) => void;
+  onPlan: (plan: Plan | null) => void;
 };
 
 const KEY_STEP = 24;
 
-export function ChatBox({ docked, width, minWidth, onWidthChange, onResizingChange, onFirstSend, onStartResolved }: Props) {
+export function ChatBox({ docked, width, minWidth, onWidthChange, onResizingChange, onFirstSend, onStartResolved, onPlan }: Props) {
   const [text, setText] = useState("");
   const [turns, setTurns] = useState<Turn[]>([]);
   const formRef = useRef<HTMLFormElement | null>(null);
@@ -48,11 +49,22 @@ export function ChatBox({ docked, width, minWidth, onWidthChange, onResizingChan
       const start = await startRef.current;
       onStartResolved(start);
       patch({ start, status: "planning" });
-      const plan = await postPlan(prompt, start);
+      // A follow-up extends the latest route; "New trip" clears it.
+      const last = [...turns].reverse().find((t) => t.plan)?.plan;
+      const previous = last
+        ? { stopIds: last.stops.map((s) => s.place.id), returnHome: last.intent.returnHome }
+        : undefined;
+      const plan = await postPlan(prompt, start, previous);
+      onPlan(plan);
       patch({ plan, status: "done" });
     } catch (err) {
       patch({ error: err instanceof Error ? err.message : String(err), status: "done" });
     }
+  }
+
+  function newTrip() {
+    setTurns([]);
+    onPlan(null);
   }
 
   function onKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
@@ -118,12 +130,18 @@ export function ChatBox({ docked, width, minWidth, onWidthChange, onResizingChan
               <h2 className="chat-prompt">{t.prompt}</h2>
               {t.status === "locating" && <p className="chat-reply">Finding where you are…</p>}
               {t.status === "planning" && <p className="chat-reply">Planning your trip…</p>}
-              {t.start && <p className="chat-reply chat-start">{describeStart(t.start)}</p>}
+              {t.start && i === 0 && <p className="chat-reply chat-start">{describeStart(t.start)}</p>}
               {t.error && <p className="chat-reply">{t.error}</p>}
               {t.plan && <PlanView plan={t.plan} />}
             </section>
           ))}
         </div>
+      )}
+
+      {docked && turns.length > 0 && (
+        <button type="button" className="chat-new-trip" onClick={newTrip}>
+          New trip
+        </button>
       )}
 
       <div className="chat-input">

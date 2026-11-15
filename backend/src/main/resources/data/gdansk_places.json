@@ -437,6 +437,20 @@
       "transit": { "mode": "tram", "stop": "Brama Wyżynna", "walkMin": 4 }
     },
     {
+      "id": "gora-gradowa",
+      "name": "Góra Gradowa (Gradowa Hill Park)",
+      "category": "landmark",
+      "subcategory": "park",
+      "district": "old-town",
+      "address": "ul. Gradowa",
+      "lat": 54.3550, "lng": 18.6404, "coordsAccuracy": "approx",
+      "tags": ["park", "green", "outdoor", "view", "historic", "quiet", "walk", "free"],
+      "description": "Hill park on old fortifications just behind the main station, with viewpoints over the Main Town and the shipyard.",
+      "visitMinutes": 60, "priceLevel": 1,
+      "hoursNote": null,
+      "transit": { "mode": "rail", "stop": "Gdańsk Główny", "walkMin": 10 }
+    },
+    {
       "id": "oliwa-cathedral",
       "name": "Oliwa Cathedral & Park",
       "category": "landmark",

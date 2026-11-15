@@ -14,17 +14,18 @@ citytrail:
   default-start:
     lat: 54.3493   # ul. Długa 11, Gdańsk (approximate)
     lng: 18.6500
-  # Optional LLM for intent parsing. When disabled (default) or when a call fails,
-  # the offline keyword parser is used. Any OpenAI-compatible endpoint works, e.g.
-  #   base-url: https://api.groq.com/openai/v1
-  #   base-url: https://openrouter.ai/api/v1
-  #   base-url: https://generativelanguage.googleapis.com/v1beta/openai
-  # Check the provider's current free-tier limits and pick a model it offers.
+  # AI intent parser (optional). It switches on when an API key is present, e.g.
+  #   export CITYTRAIL_LLM_API_KEY=...        (free key from https://console.groq.com)
+  # Without a key, or if a call fails or is rate limited, the offline keyword parser is used.
+  # Any OpenAI-compatible endpoint works; override with CITYTRAIL_LLM_BASE_URL / CITYTRAIL_LLM_MODEL, e.g.
+  #   https://generativelanguage.googleapis.com/v1beta/openai   (Gemini)
+  #   https://openrouter.ai/api/v1
+  # Model names and free-tier limits change: list a provider's current models before relying on one.
   llm:
-    enabled: false
-    base-url: ""
+    enabled: ${CITYTRAIL_LLM_ENABLED:true}
+    base-url: ${CITYTRAIL_LLM_BASE_URL:https://api.groq.com/openai/v1}
     api-key: ${CITYTRAIL_LLM_API_KEY:}
-    model: ""
+    model: ${CITYTRAIL_LLM_MODEL:openai/gpt-oss-120b}
 
 management:
   endpoints:

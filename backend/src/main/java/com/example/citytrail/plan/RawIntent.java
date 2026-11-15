@@ -8,7 +8,8 @@ import java.util.List;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record RawIntent(List<RawSlot> slots, Boolean returnHome) {
 
+    /** place: a place id the visitor named; near: a place id the stop should be close to. Both may be null. */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record RawSlot(String category, List<String> tags) {
+    public record RawSlot(String category, List<String> tags, String place, String near) {
     }
 }

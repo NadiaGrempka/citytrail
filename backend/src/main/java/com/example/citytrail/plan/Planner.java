@@ -20,7 +20,10 @@ import java.util.Set;
  * Deterministic planner (no AI): picks real places for each slot, estimates travel, and builds a timeline.
  *
  * Rules:
- *  - If the intent has an event slot, that event is chosen first and becomes the anchor. The plan is
+ *  - A slot can name a specific place (placeId); that place is used as is.
+ *  - A slot can say "near X" (nearPlaceId); it is then picked near X rather than near the previous stop.
+ *  - Event-category places without scheduled events (museums) are planned like any other nearby stop.
+ *  - If the intent has an event slot with a matching scheduled event, that event is chosen first and becomes the anchor. The plan is
  *    scheduled on the event's day and every other stop is picked near the event venue ("what's nearby").
  *  - Without an event, each stop is picked near the previous stop (the start point for the first one).
  *  - Score = 10 per matching tag, minus 1 per 100 m from the reference point (events: minus 1 per day away).
@@ -56,8 +59,18 @@ public class Planner {
         Candidate anchor = null;
         int anchorIndex = -1;
         for (int i = 0; i < slots.size(); i++) {
-            if ("event".equals(slots.get(i).category())) {
-                anchor = bestEvent(slots.get(i), used, null);
+            Slot slot = slots.get(i);
+            Candidate candidate = null;
+            if (slot.placeId() != null) {
+                Candidate named = namedCandidate(slot, used, null);
+                if (named != null && named.event() != null) {
+                    candidate = named; // a named venue with a scheduled event anchors the plan
+                }
+            } else if ("event".equals(slot.category())) {
+                candidate = bestEvent(slot, used, null);
+            }
+            if (candidate != null) {
+                anchor = candidate;
                 anchorIndex = i;
                 break;
             }
@@ -75,13 +88,28 @@ public class Planner {
         for (int i = 0; i < slots.size(); i++) {
             Slot slot = slots.get(i);
             Candidate chosen;
-            if ("event".equals(slot.category())) {
-                chosen = (i == anchorIndex) ? anchor : bestEvent(slot, used, planDay);
+            if (i == anchorIndex) {
+                chosen = anchor;
             } else {
-                double refLat = anchorPlace != null ? anchorPlace.lat() : curLat;
-                double refLng = anchorPlace != null ? anchorPlace.lng() : curLng;
-                Place place = bestPlace(slot, used, refLat, refLng, sunday);
-                chosen = place == null ? null : new Candidate(place, null);
+                chosen = slot.placeId() != null ? namedCandidate(slot, used, planDay) : null;
+                if (chosen == null && slot.placeId() == null) {
+                    boolean eventSlot = "event".equals(slot.category());
+                    if (eventSlot) {
+                        chosen = bestEvent(slot, used, planDay);
+                    }
+                    if (chosen == null) {
+                        // Also covers event-category places without scheduled events, such as museums.
+                        // "near X" wins, then the event venue the plan is built around, then the previous stop.
+                        Place near = slot.nearPlaceId() == null
+                                ? null
+                                : repository.findById(slot.nearPlaceId()).orElse(null);
+                        Place reference = near != null ? near : anchorPlace;
+                        double refLat = reference != null ? reference.lat() : curLat;
+                        double refLng = reference != null ? reference.lng() : curLng;
+                        Place place = bestPlace(slot, used, refLat, refLng, sunday, eventSlot);
+                        chosen = place == null ? null : new Candidate(place, null);
+                    }
+                }
             }
             if (chosen == null) {
                 warnings.add("Nothing found for: " + describe(slot));
@@ -139,11 +167,37 @@ public class Planner {
                 List.copyOf(warnings));
     }
 
-    private Place bestPlace(Slot slot, Set<String> used, double refLat, double refLng, boolean sunday) {
+    /** The place the visitor named, with its event on the given day (any day if null) when it has one. */
+    private Candidate namedCandidate(Slot slot, Set<String> used, Integer day) {
+        Place place = repository.findAll().stream()
+                .filter(p -> p.id().equals(slot.placeId()) && !used.contains(p.id()))
+                .findFirst()
+                .orElse(null);
+        if (place == null) {
+            return null;
+        }
+        UpcomingEvent event = null;
+        if (place.upcomingEvents() != null) {
+            event = place.upcomingEvents().stream()
+                    .filter(e -> day == null || e.dayOffset() == day)
+                    .min(Comparator.comparingInt(UpcomingEvent::dayOffset))
+                    .orElse(null);
+        }
+        return new Candidate(place, event);
+    }
+
+    /**
+     * Best place for the slot near the reference point. untimedOnly keeps just places without scheduled
+     * events (museums, exhibitions) and, when the slot has tags, requires at least one to match.
+     */
+    private Place bestPlace(Slot slot, Set<String> used, double refLat, double refLng, boolean sunday,
+                            boolean untimedOnly) {
         return repository.findAll().stream()
                 .filter(p -> p.category().equals(slot.category()))
                 .filter(p -> !used.contains(p.id()))
                 .filter(p -> sunday || !p.tags().contains("sunday-only"))
+                .filter(p -> !untimedOnly || p.upcomingEvents() == null || p.upcomingEvents().isEmpty())
+                .filter(p -> !untimedOnly || slot.tags().isEmpty() || overlap(slot, p, null) > 0)
                 .max(Comparator
                         .comparingDouble((Place p) -> overlap(slot, p, null) * 10.0
                                 - Geo.meters(refLat, refLng, p.lat(), p.lng()) / 100.0)
@@ -163,7 +217,11 @@ public class Planner {
                 if (day != null && event.dayOffset() != day) {
                     continue;
                 }
-                double score = overlap(slot, place, event) * 10.0 - event.dayOffset();
+                int matches = overlap(slot, place, event);
+                if (matches == 0 && !slot.tags().isEmpty()) {
+                    continue; // asked for a specific kind of event, and this is not it
+                }
+                double score = matches * 10.0 - event.dayOffset();
                 if (score > bestScore) {
                     bestScore = score;
                     best = new Candidate(place, event);

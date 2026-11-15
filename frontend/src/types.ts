@@ -39,7 +39,7 @@ export type District = {
   radiusM: number;
 };
 
-export type Slot = { category: Category; tags: string[] };
+export type Slot = { category: Category; tags: string[]; placeId?: string | null; nearPlaceId?: string | null };
 export type Intent = { slots: Slot[]; returnHome: boolean };
 
 export type Leg = {

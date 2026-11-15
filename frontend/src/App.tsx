@@ -3,11 +3,13 @@ import { fetchPlaces } from "./api/client";
 import { ChatBox } from "./features/chat/ChatBox";
 import { MenuButton } from "./features/menu/MenuButton";
 import { MapView } from "./features/map/MapView";
+import { useTrail } from "./features/map/useTrail";
 import type { StartPoint } from "./location";
 import { useTheme } from "./theme";
-import type { Place } from "./types";
+import type { Place, Plan, Stop } from "./types";
 import "./App.css";
 
+const NO_STOPS: Stop[] = [];
 const MIN_PANEL_WIDTH = 320;
 const DEFAULT_PANEL_WIDTH = 440;
 const WIDTH_KEY = "citytrail.panelWidth";
@@ -23,9 +25,10 @@ function loadWidth(): number {
 
 function App() {
   const [places, setPlaces] = useState<Place[]>([]);
-  const [error, setError] = useState<string | null>(null);
   const [theme, setTheme] = useTheme();
   const [start, setStart] = useState<StartPoint | null>(null);
+  const [plan, setPlan] = useState<Plan | null>(null);
+  const trail = useTrail(plan, start);
   const [docked, setDocked] = useState(false);
   const [resizing, setResizing] = useState(false);
   const [panelWidth, setPanelWidth] = useState(loadWidth);
@@ -33,7 +36,7 @@ function App() {
   useEffect(() => {
     fetchPlaces()
       .then(setPlaces)
-      .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
+      .catch((e: unknown) => console.warn("Could not load places:", e));
   }, []);
 
   useEffect(() => {
@@ -49,7 +52,7 @@ function App() {
   return (
     <main className={docked ? "app app--docked" : "app"} style={workspaceStyle}>
       <div className={resizing ? "workspace workspace--resizing" : "workspace"}>
-        <MapView places={places} theme={theme} start={start} />
+        <MapView places={places} theme={theme} start={start} stops={plan?.stops ?? NO_STOPS} trail={trail} />
       </div>
       <ChatBox
         docked={docked}
@@ -59,6 +62,7 @@ function App() {
         onResizingChange={setResizing}
         onFirstSend={() => setDocked(true)}
         onStartResolved={setStart}
+        onPlan={setPlan}
       />
       <MenuButton theme={theme} onThemeChange={setTheme} />
       {/*<p className="status" role="status">*/}

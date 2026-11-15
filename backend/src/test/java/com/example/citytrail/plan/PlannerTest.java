@@ -74,4 +74,29 @@ class PlannerTest {
         Stop eventStop = plan.stops().get(2);
         assertTrue(Planner.toMinutes(eventStop.arrive()) >= Planner.toMinutes(eventStop.event().time()));
     }
+
+    @Test
+    void plansANamedCafeThenANearbyMuseumWithoutPickingAGig() {
+        Intent intent = new Intent(List.of(
+                new Slot("food", List.of(), "jozef-k"),
+                new Slot("event", List.of("museum"))), false);
+
+        Plan plan = planner.plan(intent, START_LAT, START_LNG, 14 * 60, "test");
+
+        assertEquals(List.of("jozef-k", plan.stops().get(1).place().id()),
+                plan.stops().stream().map(s -> s.place().id()).toList());
+        assertEquals("museum", plan.stops().get(1).place().subcategory());
+        assertNull(plan.stops().get(1).event());
+        assertEquals(0, plan.dayOffset());
+        assertTrue(plan.warnings().isEmpty());
+    }
+
+    @Test
+    void doesNotSubstituteAnUnrelatedPlaceWhenNoEventMatches() {
+        Intent intent = new Intent(List.of(new Slot("event", List.of("ballet", "rock", "jazz", "no-such-tag"))), false);
+
+        Plan plan = planner.plan(intent, START_LAT, START_LNG, 14 * 60, "test");
+
+        assertTrue(plan.stops().size() <= 1);
+    }
 }

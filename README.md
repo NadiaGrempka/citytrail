@@ -5,7 +5,7 @@ and it plans the stops on a map. A district on the map "unlocks" (turns colourfu
 
 - **Backend:** Java 21, Spring Boot 4.1, Maven. Serves the mock dataset and (later) the planner.
 - **Frontend:** React 19 + TypeScript on Vite+ (`vp`), MapLibre GL for the map, `motion` for animation.
-- **Data:** 30 mock places in `backend/src/main/resources/data/gdansk_places.json`
+- **Data:** 31 mock places in `backend/src/main/resources/data/gdansk_places.json`
   (see the `meta.notes` block in that file for what is real and what is mocked).
 
 ## Structure
@@ -53,7 +53,7 @@ cd backend
 mvn spring-boot:run        # or run CityTrailApplication from IntelliJ
 ```
 
-Check it: <http://localhost:8080/api/places> returns 30 places, and <http://localhost:8080/actuator/health> returns `UP`.
+Check it: <http://localhost:8080/api/places> returns 31 places, and <http://localhost:8080/actuator/health> returns `UP`.
 
 Run the tests with `mvn test`.
 
@@ -67,7 +67,7 @@ npm install
 npm run dev                # same as `vp dev`
 ```
 
-Open <http://localhost:5173>. The pill in the top-right should say "30 places loaded from the backend"
+Open <http://localhost:5173>. The pill in the top-right should say "31 places loaded from the backend"
 and the map should show a marker per place. Type something like "a local cafe, a thrift shop, a rock gig and a ride home" in the prompt box
 and the planned stops appear under it.
 
@@ -94,20 +94,47 @@ Other commands: `npm run build`, `npm run lint` (Vite+ runs Oxlint), `npm run pr
    chosen near the previous one. Travel is estimated from distance and each place's mocked nearest stop.
 3. The response says which parser was used (`parsedBy`: `llm` or `keyword`).
 
-## Turning on the LLM parser (optional, free tiers)
+## What to type
 
-Any OpenAI-compatible `/chat/completions` endpoint works (Groq, OpenRouter, Gemini's OpenAI-compatible endpoint, local Ollama).
-Pick a provider, create a key, check its current free-tier limits and model names, then:
+Without the LLM, the keyword parser reads your sentence. Stops are planned in the order you mention them.
+
+- **Kinds of places:** cafe/coffee, restaurant, milk bar, thrift/vintage shop, bookshop, museum, church,
+  sightseeing, and events (rock, jazz, opera, theatre, concert...).
+- **A specific place by name:** just write it, accents and punctuation optional ("Jozef K", "Dwor Artusa",
+  "Golden Gate"). A cafe word next to the name ("Jozef K caffe") does not add a second stop.
+- **"Near X":** `a bookshop near Dwor Artusa` or `a park near the museum` picks the stop near that place
+  (a named place, or a stop already in your route), not near the previous stop.
+- **Nearby:** with no "near", each stop is picked near the previous one. With an event in the plan, the other stops are picked
+  near the event venue and the plan runs on the event's day.
+- **Follow-ups:** a later message adds stops to the route so far; "New trip" starts over.
+- **Ride home:** say "home" or "back to the hotel" to end with a leg back to your start point.
+
+Examples: `Jozef K, then a nearby museum` / `a coffee, a thrift shop, a rock gig and a ride home` /
+`Dwor Artusa and then a milk bar`.
+
+## The trail on the map
+
+After a plan comes back, the frontend draws the route start -> stops (A, B, C...) -> home. Walking legs follow
+real streets, looked up from the free OpenStreetMap community walking router
+(`routing.openstreetmap.de/routed-foot`, no key, fair-use; see `frontend/src/api/routing.ts`). Transit legs, and any
+walking leg whose lookup fails, are drawn as dashed straight lines. For real traffic, host your own OSRM or Valhalla
+and change `FOOT_ROUTER`.
+
+## Turning on the AI parser (free tier)
+
+The AI parser switches on by itself when an API key is present; no key means the offline keyword parser.
+
+1. Create a free key at https://console.groq.com (no card needed at the time of writing; check the console for your current limits).
+2. Start the backend with the key:
 
 ```bash
 export CITYTRAIL_LLM_API_KEY=your-key
-cd backend
-mvn spring-boot:run \
-  -Dspring-boot.run.arguments="--citytrail.llm.enabled=true --citytrail.llm.base-url=https://api.groq.com/openai/v1 --citytrail.llm.model=MODEL_NAME"
+mvn spring-boot:run
 ```
 
-Or set `citytrail.llm.*` in `application.yml`. The app refuses to start if `enabled=true` but base URL, key or model is empty.
-Leave it disabled for the demo-safe path; the keyword parser needs nothing.
+The log says `AI intent parser is on: model ...`. Defaults are Groq and `openai/gpt-oss-120b`; if that model name has been retired, pick a current one from the provider's model list and set `CITYTRAIL_LLM_MODEL`. Any OpenAI-compatible endpoint works via `CITYTRAIL_LLM_BASE_URL` (Gemini: `https://generativelanguage.googleapis.com/v1beta/openai`, OpenRouter: `https://openrouter.ai/api/v1`). Set `CITYTRAIL_LLM_ENABLED=false` to force the keyword parser.
+
+The model is given the list of places and the route so far, so it resolves place names ("jozef k"), "near X" and follow-ups ("a park near the museum"). Its answer is sanitized: unknown place ids and tags are dropped. On any error, rate limit or empty answer the keyword parser takes over, and `parsedBy` in the response shows which one ran.
 
 ## Next steps (suggested order)
 

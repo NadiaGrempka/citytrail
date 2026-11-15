@@ -15,7 +15,7 @@ class PlaceRepositoryTest {
 
     @Test
     void loadsAllThirtyPlaces() {
-        assertEquals(30, repository.findAll().size());
+        assertEquals(31, repository.findAll().size());
     }
 
     @Test

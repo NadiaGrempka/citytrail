@@ -18,9 +18,18 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 export const fetchPlaces = () => request<Place[]>("/places");
 export const fetchDistricts = () => request<District[]>("/districts");
 
-export const postPlan = (text: string, start?: { lat: number; lng: number }) =>
+/** The route built so far; sent with a follow-up so the new stops are added to it. */
+export type PreviousRoute = { stopIds: string[]; returnHome: boolean };
+
+export const postPlan = (text: string, start?: { lat: number; lng: number }, previous?: PreviousRoute) =>
   request<Plan>("/plan", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text, startLat: start?.lat, startLng: start?.lng }),
+    body: JSON.stringify({
+      text,
+      startLat: start?.lat,
+      startLng: start?.lng,
+      previousStopIds: previous?.stopIds,
+      previousReturnHome: previous?.returnHome,
+    }),
   });

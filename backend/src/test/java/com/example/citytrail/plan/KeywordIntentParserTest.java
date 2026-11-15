@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class KeywordIntentParserTest {
 
     private final PlaceRepository repository = new PlaceRepository(JsonMapper.builder().build());
-    private final KeywordIntentParser parser = new KeywordIntentParser(new IntentVocabulary(repository));
+    private final KeywordIntentParser parser = new KeywordIntentParser(new IntentVocabulary(repository), repository);
 
     private static List<String> categories(Intent intent) {
         return intent.slots().stream().map(Slot::category).toList();
@@ -53,5 +53,23 @@ class KeywordIntentParserTest {
 
         assertTrue(intent.slots().isEmpty());
         assertFalse(intent.returnHome());
+    }
+
+    @Test
+    void recognisesAPlaceByNameIgnoringAccentsAndPunctuation() {
+        Intent intent = parser.parse("I would like to go to Jozef k and then to a nearby museum");
+
+        assertEquals(List.of("food", "event"), categories(intent));
+        assertEquals("jozef-k", intent.slots().get(0).placeId());
+        assertEquals(List.of("museum"), intent.slots().get(1).tags());
+    }
+
+    @Test
+    void aKeywordNextToANameDoesNotAddASecondStop() {
+        Intent intent = parser.parse("Jozef K. caffe and then the Museum of the Second World War");
+
+        assertEquals(List.of("food", "event"), categories(intent));
+        assertEquals("jozef-k", intent.slots().get(0).placeId());
+        assertEquals("museum-ww2", intent.slots().get(1).placeId());
     }
 }

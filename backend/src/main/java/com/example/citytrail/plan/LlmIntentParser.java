@@ -2,8 +2,12 @@ package com.example.citytrail.plan;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.example.citytrail.places.Place;
+import com.example.citytrail.places.PlaceRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -18,16 +22,20 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
- * Calls any OpenAI-compatible /chat/completions endpoint (Groq, OpenRouter, Gemini's OpenAI-compatible
- * endpoint, a local Ollama...). Enabled only when citytrail.llm.enabled=true. The model's answer is
- * treated as untrusted: it is parsed and then sanitized against the dataset vocabulary.
+ * Calls any OpenAI-compatible /chat/completions endpoint (Groq, Gemini's OpenAI-compatible endpoint,
+ * OpenRouter, a local Ollama...). Active only when citytrail.llm.enabled=true AND an API key is set, so
+ * adding the key is all it takes to switch the AI parser on. The model sees the place list and the route
+ * built so far, so it can resolve place names, "near X" and follow-ups. Its answer is treated as untrusted:
+ * it is parsed and then sanitized against the dataset (unknown ids and tags are dropped).
  */
 @Component
-@ConditionalOnProperty(name = "citytrail.llm.enabled", havingValue = "true")
+@ConditionalOnExpression("${citytrail.llm.enabled:false} and '${citytrail.llm.api-key:}' != ''")
 public class LlmIntentParser implements IntentParser {
 
+    private static final Logger log = LoggerFactory.getLogger(LlmIntentParser.class);
     private static final String PROMPT_RESOURCE = "prompts/intent-system.txt";
 
     private final RestClient client;
@@ -39,17 +47,18 @@ public class LlmIntentParser implements IntentParser {
     public LlmIntentParser(
             ObjectMapper objectMapper,
             IntentVocabulary vocabulary,
+            PlaceRepository repository,
             @Value("${citytrail.llm.base-url}") String baseUrl,
             @Value("${citytrail.llm.api-key}") String apiKey,
             @Value("${citytrail.llm.model}") String model) {
         if (baseUrl.isBlank() || apiKey.isBlank() || model.isBlank()) {
             throw new IllegalStateException(
-                    "citytrail.llm.enabled=true requires citytrail.llm.base-url, api-key and model to be set");
+                    "The AI parser needs citytrail.llm.base-url, api-key and model to be set");
         }
         this.objectMapper = objectMapper;
         this.vocabulary = vocabulary;
         this.model = model;
-        this.systemPrompt = loadPrompt(vocabulary);
+        this.systemPrompt = loadPrompt(vocabulary, repository);
 
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(Duration.ofSeconds(5));
@@ -59,13 +68,19 @@ public class LlmIntentParser implements IntentParser {
                 .baseUrl(baseUrl.replaceAll("/+$", ""))
                 .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey)
                 .build();
+        log.info("AI intent parser is on: model {} at {}", model, baseUrl);
     }
 
     @Override
     public Intent parse(String text) {
+        return parse(text, List.of());
+    }
+
+    /** route: the stops already planned, so "near the museum" and follow-ups can be resolved. */
+    public Intent parse(String text, List<Place> route) {
         ChatRequest request = new ChatRequest(
                 model,
-                List.of(new ChatMessage("system", systemPrompt), new ChatMessage("user", text)),
+                List.of(new ChatMessage("system", systemPrompt), new ChatMessage("user", userMessage(text, route))),
                 0.0,
                 new ResponseFormat("json_object"));
 
@@ -79,6 +94,14 @@ public class LlmIntentParser implements IntentParser {
         String content = firstContent(response);
         RawIntent raw = objectMapper.readValue(stripFences(content), RawIntent.class);
         return vocabulary.sanitize(raw);
+    }
+
+    /** The visitor's text is only ever sent as the user message, never mixed into the instructions. */
+    static String userMessage(String text, List<Place> route) {
+        String stops = route.isEmpty()
+                ? "none"
+                : route.stream().map(p -> p.id() + " (" + p.name() + ")").collect(Collectors.joining(", "));
+        return "Current route: " + stops + "\nRequest: " + text;
     }
 
     private static String firstContent(ChatResponse response) {
@@ -105,10 +128,15 @@ public class LlmIntentParser implements IntentParser {
         return trimmed;
     }
 
-    private static String loadPrompt(IntentVocabulary vocabulary) {
+    private static String loadPrompt(IntentVocabulary vocabulary, PlaceRepository repository) {
         try (InputStream in = new ClassPathResource(PROMPT_RESOURCE).getInputStream()) {
             String template = new String(in.readAllBytes(), StandardCharsets.UTF_8);
-            return template.replace("{{TAGS}}", String.join(", ", vocabulary.sortedTags()));
+            String places = repository.findAll().stream()
+                    .map(p -> p.id() + ": " + p.name() + ", " + p.category() + "/" + p.subcategory())
+                    .collect(Collectors.joining("\n"));
+            return template
+                    .replace("{{TAGS}}", String.join(", ", vocabulary.sortedTags()))
+                    .replace("{{PLACES}}", places);
         } catch (IOException e) {
             throw new UncheckedIOException("Cannot load " + PROMPT_RESOURCE, e);
         }
