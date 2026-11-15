@@ -19,7 +19,8 @@ and it plans the stops on a map. A district on the map "unlocks" (turns colourfu
 │       │   ├── CityTrailApplication.java
 │       │   ├── config/WebConfig.java        CORS for the Vite dev origin
 │       │   ├── places/                      records, PlaceRepository, GET /api/places etc.
-│       │   └── plan/                        POST /api/plan: intent parsing + planner
+│       │   ├── plan/                        POST /api/plan: intent parsing + planner
+│       │   └── trips/                       CRUD for saved trips (H2 in memory, JdbcClient)
 │       ├── main/resources
 │       │   ├── application.yml
 │       │   ├── prompts/intent-system.txt    system prompt for the LLM parser
@@ -80,7 +81,14 @@ Other commands: `npm run build`, `npm run lint` (Vite+ runs Oxlint), `npm run pr
 | GET    | `/api/places`             | all places; optional `?category=food\|store\|event\|landmark` |
 | GET    | `/api/places/{id}`        | one place, 404 if unknown                          |
 | GET    | `/api/districts`          | districts used for the unlock mechanic             |
-| POST   | `/api/plan`               | body `{ "text", "startLat?", "startLng?", "startTime?" }`, returns a `Plan` (stops, times, legs, return leg, warnings); 400 with a message if nothing can be planned |
+| POST   | `/api/plan`               | body `{ "text", "startLat?", "startLng?", "startTime?", "walkPace?": "slow\|normal\|fast" }`, returns a `Plan` (stops, times, legs, return leg, warnings); 400 with a message if nothing can be planned |
+| GET    | `/api/trips`              | saved trips, newest first                          |
+| POST   | `/api/trips`              | save a trip: `{ "stopIds": [...], "returnHome?", "title?", "startLat?", "startLng?", "prompt?" }`; 201 with the trip; 400 if no known stop |
+| GET    | `/api/trips/{id}`         | the trip plus its re-planned `Plan`; 404 if unknown |
+| PATCH  | `/api/trips/{id}`         | rename: `{ "title" }`                              |
+| DELETE | `/api/trips/{id}`         | remove, 204                                        |
+| DELETE | `/api/trips`              | remove all saved trips, 204                        |
+| GET    | `/api/info`               | `{ aiParser, model }`: which intent parser is active |
 | GET    | `/actuator/health`        | liveness                                           |
 
 ## How planning works
@@ -120,6 +128,20 @@ real streets, looked up from the free OpenStreetMap community walking router
 walking leg whose lookup fails, are drawn as dashed straight lines. For real traffic, host your own OSRM or Valhalla
 and change `FOOT_ROUTER`.
 
+## Saved trips and the database
+
+Saved trips live in an embedded in-memory H2 database (`schema.sql`, accessed with Spring's `JdbcClient`), so there is
+nothing to install. They are lost when the backend stops, which the task allows. Only the stop ids are stored; opening a
+trip re-plans it (`parsedBy: "saved"`). In the app: "Save trip" under a plan, then burger menu, "My trips" to open,
+rename or delete. Each plan also shows a rough CO₂ comparison against driving the same legs (estimated factors in
+`frontend/src/features/chat/eco.ts`).
+
+## Settings
+
+Burger menu, "Settings" (kept in `localStorage`): start location (your location or ul. Długa 11), trip start time,
+walking pace (slow 60, normal 80, fast 100 m/min, used by the backend for walking legs), which parser is active, clearing
+saved trips, and resetting the chat panel width. The menu also has the light/dark switch.
+
 ## Turning on the AI parser (free tier)
 
 The AI parser switches on by itself when an API key is present; no key means the offline keyword parser.
@@ -142,3 +164,14 @@ The model is given the list of places and the route so far, so it resolves place
 2. Fog-of-war: GeoJSON fog polygon with holes for unlocked districts, ids kept in `localStorage`; unlock a district when a stop there is completed.
 3. Polish: glass chat card, gradual bottom blur, ticket-style result card, loading and error states.
 4. Replace estimated legs with something better only if time allows (the estimates are fine for the demo).
+
+## Discover, saved places and preferences
+
+- **Find something fun** (map, top right) opens Discover: filter pills (tags-based), place cards with a heart, and a detail page with "Show me the way" (sends the place name to the guide) and "Ask the guide".
+- Hearted places live in `localStorage` (`citytrail.favorites`) and show on **Saved places**.
+- **Your preferences** stores interests (`citytrail.interests`) that reorder Discover.
+- The theme toggle is a single round button next to "Find something fun".
+
+## All ways to get there
+
+When a plan has a single destination, the chat lists walking, tram, bus and train options (duration, times, line numbers, changes). Tapping one draws it on the map in a mode colour. Data comes from the free Transitous journey planner (`api.transitous.org`, called from the browser); a mode with no connection is simply left out.

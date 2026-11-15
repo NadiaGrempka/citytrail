@@ -34,6 +34,8 @@ import java.util.Set;
 public class Planner {
 
     private static final int WALK_M_PER_MIN = 80;
+    private static final int SLOW_WALK_M_PER_MIN = 60;
+    private static final int FAST_WALK_M_PER_MIN = 100;
     private static final int WALK_ONLY_MAX_M = 1200;
     private static final int TRANSIT_M_PER_MIN = 450;
     private static final int TRANSIT_WAIT_MIN = 4;
@@ -51,7 +53,24 @@ public class Planner {
     private record Candidate(Place place, UpcomingEvent event) {
     }
 
+    /** Walking speed in metres per minute for "slow", "normal" or "fast" (anything else counts as normal). */
+    public static int walkSpeed(String pace) {
+        if (pace == null) {
+            return WALK_M_PER_MIN;
+        }
+        return switch (pace.trim().toLowerCase(java.util.Locale.ROOT)) {
+            case "slow" -> SLOW_WALK_M_PER_MIN;
+            case "fast" -> FAST_WALK_M_PER_MIN;
+            default -> WALK_M_PER_MIN;
+        };
+    }
+
     public Plan plan(Intent intent, double startLat, double startLng, int startMinutes, String parsedBy) {
+        return plan(intent, startLat, startLng, startMinutes, parsedBy, WALK_M_PER_MIN);
+    }
+
+    public Plan plan(Intent intent, double startLat, double startLng, int startMinutes, String parsedBy,
+                     int walkMPerMin) {
         List<String> warnings = new ArrayList<>();
         Set<String> used = new HashSet<>();
         List<Slot> slots = intent.slots();
@@ -120,7 +139,7 @@ public class Planner {
             UpcomingEvent event = chosen.event();
             used.add(place.id());
 
-            Leg leg = leg(curLat, curLng, curTransit, place.lat(), place.lng(), place.transit());
+            Leg leg = leg(curLat, curLng, curTransit, place.lat(), place.lng(), place.transit(), walkMPerMin);
             int arrive = minute + leg.minutes();
             List<String> notes = new ArrayList<>();
             if (event != null) {
@@ -147,7 +166,7 @@ public class Planner {
         Leg returnLeg = null;
         int end = minute;
         if (intent.returnHome() && !stops.isEmpty()) {
-            returnLeg = leg(curLat, curLng, curTransit, startLat, startLng, null);
+            returnLeg = leg(curLat, curLng, curTransit, startLat, startLng, null, walkMPerMin);
             end = minute + returnLeg.minutes();
         }
         if (end >= LATE_FINISH_MINUTES) {
@@ -250,10 +269,10 @@ public class Planner {
      * a wait, and a walk from the stop. A null Transit means "assume a short walk at that end".
      */
     private static Leg leg(double fromLat, double fromLng, Transit fromTransit,
-                           double toLat, double toLng, Transit toTransit) {
+                           double toLat, double toLng, Transit toTransit, int walkMPerMin) {
         int distance = (int) Math.round(Geo.meters(fromLat, fromLng, toLat, toLng));
         if (distance <= WALK_ONLY_MAX_M) {
-            int minutes = (int) Math.ceil(distance / (double) WALK_M_PER_MIN);
+            int minutes = (int) Math.ceil(distance / (double) walkMPerMin);
             return new Leg("walk", minutes, distance, "Walk " + minutes + " min");
         }
         int fromWalk = fromTransit == null ? DEFAULT_END_WALK_MIN : fromTransit.walkMin();

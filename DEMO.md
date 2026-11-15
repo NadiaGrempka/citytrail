@@ -19,15 +19,18 @@ Type: `and a park near the museum`
 Type: `a bookshop near Dwor Artusa, then take me home`
 - Point out: the bookshop is by Dwór Artusa, and the ride home is added at the end.
 
-## 5. Panel and theme (20 s)
+## 5. Save and reopen (20 s)
+- Press "Save trip" under the plan (note the CO₂ line). Press "New trip", open the burger menu, "My trips", and open the trip: the route comes back. Rename or delete it to show the full CRUD.
+
+## 6. Panel and theme (20 s)
 - Drag the chat panel's edge to resize it. Open the burger menu and switch to dark theme (the trail and map restyle).
 - Press "New trip" to reset.
 
-## 6. How it works (30 s)
+## 7. How it works (30 s)
 "A language model turns the sentence into structured stops, using only places from our dataset. If it's down or rate limited, an offline keyword parser takes over, so the demo never breaks. The route itself is planned by deterministic code, and the walking paths come from OpenStreetMap routing."
 
 ## Fallback if the AI is slow or offline
 Stop the backend and restart without the key. The same sentences still work through the keyword parser; the response shows `parsedBy: keyword`.
 
 ## Honest limits (if asked)
-Mock data for 31 places; transit legs are estimates; the burger menu items (recent chats, my trips, settings) are placeholders; start time is fixed at 14:00.
+Mock data for 31 places; saved trips are in memory and reset when the backend restarts; transit legs are estimates; the burger menu items (recent chats, my trips, settings) are placeholders; start time is fixed at 14:00.

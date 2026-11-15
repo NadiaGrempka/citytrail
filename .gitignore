@@ -12,3 +12,6 @@ backend/target/
 frontend/node_modules/
 frontend/dist/
 *.log
+
+# files moved aside because deleting was not permitted
+_to_delete/

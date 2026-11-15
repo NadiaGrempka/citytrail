@@ -1,34 +1,36 @@
 import { useEffect, useRef, useState } from "react";
-import type { Theme } from "../../theme";
+import type { ComponentType } from "react";
+import { CompassIcon, HeartIcon, MapIcon, RouteIcon, SettingsIcon, UserIcon } from "../../components/icons";
 
-type View = "recent" | "trips" | "settings";
+export type Page = "map" | "discover" | "place" | "saved" | "trips" | "prefs" | "settings";
 
-const VIEWS: { id: View; label: string; empty: string }[] = [
-  { id: "recent", label: "Recent chats", empty: "Your past conversations will show up here." },
-  { id: "trips", label: "My trips", empty: "Trips you save will show up here." },
-  { id: "settings", label: "Settings", empty: "Settings are coming soon." },
+const ITEMS: { id: Page; label: string; Icon: ComponentType<{ size?: number }> }[] = [
+  { id: "map", label: "Guide & map", Icon: MapIcon },
+  { id: "discover", label: "Discover", Icon: CompassIcon },
+  { id: "saved", label: "Saved places", Icon: HeartIcon },
+  { id: "trips", label: "Saved trips", Icon: RouteIcon },
+  { id: "prefs", label: "Your preferences", Icon: UserIcon },
+  { id: "settings", label: "Settings", Icon: SettingsIcon },
 ];
 
-type Props = { theme: Theme; onThemeChange: (t: Theme) => void };
+type Props = {
+  page: Page;
+  onNavigate: (page: Page) => void;
+  savedCount: number;
+  tripCount: number;
+};
 
-export function MenuButton({ theme, onThemeChange }: Props) {
+export function MenuButton({ page, onNavigate, savedCount, tripCount }: Props) {
   const [open, setOpen] = useState(false);
-  const [view, setView] = useState<View | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (!open && !view) return;
+    if (!open) return;
     const onPointerDown = (e: PointerEvent) => {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
-        setOpen(false);
-        setView(null);
-      }
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false);
     };
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setOpen(false);
-        setView(null);
-      }
+      if (e.key === "Escape") setOpen(false);
     };
     document.addEventListener("pointerdown", onPointerDown);
     document.addEventListener("keydown", onKey);
@@ -36,63 +38,42 @@ export function MenuButton({ theme, onThemeChange }: Props) {
       document.removeEventListener("pointerdown", onPointerDown);
       document.removeEventListener("keydown", onKey);
     };
-  }, [open, view]);
-
-  const current = VIEWS.find((v) => v.id === view);
+  }, [open]);
 
   return (
-    <div ref={rootRef} className="menu">
+    <div ref={rootRef} className={page === "map" || page === "place" ? "menu" : "menu menu--topbar"}>
       <button
         type="button"
-        className="menu-button"
-        aria-label="Menu"
+        className={open ? "menu-button is-open" : "menu-button"}
+        aria-label={open ? "Close menu" : "Menu"}
         aria-haspopup="menu"
         aria-expanded={open}
-        onClick={() => {
-          setView(null);
-          setOpen((o) => !o);
-        }}
+        onClick={() => setOpen((o) => !o)}
       >
         <span className="menu-burger" aria-hidden="true" />
       </button>
 
       {open && (
         <div className="menu-popover" role="menu">
-          {VIEWS.map((v) => (
+          {ITEMS.map((item) => (
             <button
-              key={v.id}
+              key={item.id}
               type="button"
               role="menuitem"
-              className="menu-item"
+              className={page === item.id ? "menu-item is-current" : "menu-item"}
+              aria-current={page === item.id ? "page" : undefined}
               onClick={() => {
-                setView(v.id);
+                onNavigate(item.id);
                 setOpen(false);
               }}
             >
-              {v.label}
+              <item.Icon size={18} />
+              <span>{item.label}</span>
+              {item.id === "saved" && savedCount > 0 && <span className="menu-count">{savedCount}</span>}
+              {item.id === "trips" && tripCount > 0 && <span className="menu-count">{tripCount}</span>}
             </button>
           ))}
-          <div className="menu-theme" role="group" aria-label="Theme">
-            {(["light", "dark"] as const).map((t) => (
-              <button
-                key={t}
-                type="button"
-                className={theme === t ? "menu-theme-option is-active" : "menu-theme-option"}
-                aria-pressed={theme === t}
-                onClick={() => onThemeChange(t)}
-              >
-                {t === "light" ? "Light" : "Dark"}
-              </button>
-            ))}
-          </div>
         </div>
-      )}
-
-      {current && (
-        <section className="menu-popover menu-sheet" aria-label={current.label}>
-          <h2>{current.label}</h2>
-          <p>{current.empty}</p>
-        </section>
       )}
     </div>
   );

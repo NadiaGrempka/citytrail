@@ -2,20 +2,24 @@
   color-scheme: light;
   --frame-color: #ffffff;
   --ink: #1f3a33;
-  --glass: rgb(255 255 255 / 0.85);
+  --glass: rgb(255 255 255 / 0.5);
   --panel-from: #6f9f7c;
   --panel-to: #8fae8c;
   --frame-width: 1.5rem;
-  --map-radius: 60px 60px 0 0;
+  --map-radius: 60px;
+  --chat-bg: #6A866B;
+  --chat-border-color: rgb(11 41 0 / 0.2);
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
   --frame-color: #0e1714;
   --ink: #e3efe8;
-  --glass: rgb(26 40 34 / 0.88);
+  --glass: rgb(26 40 34 / 0.55);
   --panel-from: #2d4a3b;
   --panel-to: #3d5d4b;
+  --chat-bg: #192A20;
+  --chat-border-color: rgb(217 243 106 / 0.5);
 }
 
 body {
@@ -37,10 +41,6 @@ body {
   border-radius: var(--map-radius);
   overflow: hidden;
   isolation: isolate; /* keeps the rounded clip reliable for the WebGL canvas */
-  /* Dissolve the bottom into the frame so no bottom edge is visible */
-  --fade-height: 10%;
-  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - var(--fade-height)), transparent 100%);
-  mask-image: linear-gradient(to bottom, #000 calc(100% - var(--fade-height)), transparent 100%);
 }
 
 /* The map shrinks to make room for the docked chat panel */
@@ -62,23 +62,6 @@ body {
   inset: 0;
 }
 
-/* Gradual blur on the lower border: stacked layers, strongest at the very bottom */
-.map-blur {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: calc(var(--fade-height) * 1.9);
-  pointer-events: none;
-}
-
-.map-blur-layer {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-}
-
 .chat {
   position: absolute;
   left: 50%;
@@ -88,6 +71,7 @@ body {
   width: min(720px, calc(100% - 2rem));
   padding: 1rem 1.25rem;
   border-radius: 28px;
+  border: 1px solid var(--chat-border-color);
   background: rgb(60 60 60 / 0.01);
   backdrop-filter: blur(80px);
   display: flex;
@@ -103,14 +87,14 @@ body {
   bottom: var(--frame-width);
   transform: none;
   max-width: 64vw;
-  padding: 2rem 2rem 22%;
-  border-radius: 0 var(--map-radius) 0 0;
-  background: linear-gradient(to bottom, #9f6f91, #8fae8c);
+  padding: 2rem 2rem 1.75rem;
+  border: 0;
+  border-radius: 0 var(--map-radius) var(--map-radius) 0;
+  background: var(--chat-bg);
   backdrop-filter: none;
   color: #fff;
   justify-content: space-between;
-  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 20%), transparent 100%);
-  mask-image: linear-gradient(to bottom, #000 calc(100% - 20%), transparent 100%);
+  gap: 1rem;
   animation: dock-in 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
@@ -201,12 +185,13 @@ body {
   border-radius: 2px;
   transform: translateY(-50%);
   background: rgb(255 255 255 / 0.55);
-  opacity: 0;
+  opacity: 0.35; /* always faintly visible so the drag handle is discoverable */
   transition: opacity 0.2s;
 }
 
 .chat-resizer:hover::after,
-.chat-resizer:focus-visible::after {
+.chat-resizer:focus-visible::after,
+.chat-resizer:active::after {
   opacity: 1;
 }
 
@@ -230,14 +215,10 @@ body {
 .chat-reply ol {
   padding-left: 1.25rem;
 }
-/* Attribution (MapLibre | OpenFreeMap) moves to the map's top-right when the chat is docked */
+/* Attribution (MapLibre | OpenFreeMap) stays at the bottom, inset so the map's rounded corner doesn't clip it */
 .maplibregl-ctrl-bottom-right {
-  transition: top 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
-.app--docked .maplibregl-ctrl-bottom-right {
-  top: 0;
-  bottom: auto;
+  right: 2.25rem;
+  bottom: 0.75rem;
 }
 
 /* Hamburger menu */
@@ -273,12 +254,32 @@ body {
 .menu-burger {
   position: relative;
   top: -3px;
+  transition: top 0.2s ease, transform 0.2s ease;
 }
 
 .menu-burger::before {
   content: "";
   position: absolute;
   top: 7px;
+  transition: top 0.2s ease, transform 0.2s ease;
+}
+
+/* Open: the two bars meet in the middle and cross into an X. */
+.is-open .menu-burger {
+  top: 0;
+  transform: rotate(45deg);
+}
+
+.is-open .menu-burger::before {
+  top: 0;
+  transform: rotate(-90deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-burger,
+  .menu-burger::before {
+    transition: none;
+  }
 }
 
 .menu-popover {
@@ -303,7 +304,9 @@ body {
 }
 
 .menu-item {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
   width: 100%;
   padding: 0.7rem 1rem;
   border: 0;
@@ -322,33 +325,42 @@ body {
 
 .menu-theme {
   display: flex;
-  gap: 0.25rem;
+  justify-content: center;
+  gap: 0.6rem;
   margin: 0.5rem 0.25rem 0.25rem;
-  padding: 0.25rem;
-  border-radius: 999px;
-  background: rgb(127 160 140 / 0.2);
 }
 
 .menu-theme-option {
-  flex: 1;
-  padding: 0.4rem 0.75rem;
-  border: 0;
-  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 1.5px solid currentcolor;
+  border-radius: 50%;
   background: transparent;
   color: inherit;
-  font: inherit;
-  font-size: 0.875rem;
   cursor: pointer;
+  opacity: 0.6;
+  transition: background 0.15s, color 0.15s, opacity 0.15s;
+}
+
+.menu-theme-option:hover,
+.menu-theme-option:focus-visible {
+  opacity: 1;
 }
 
 .menu-theme-option.is-active {
-  background: var(--frame-color);
-  box-shadow: 0 1px 4px rgb(0 0 0 / 0.15);
+  background: var(--ink);
+  color: var(--frame-color);
+  opacity: 1;
 }
 
 .menu-sheet {
   padding: 1rem 1.25rem;
-  width: 18rem;
+  width: 22rem;
+  max-width: calc(100vw - 2rem);
+  max-height: 60vh;
+  overflow-y: auto;
 }
 
 .menu-sheet h2 {
@@ -448,4 +460,498 @@ body {
 .chat-new-trip:hover,
 .chat-new-trip:focus-visible {
   background: rgb(255 255 255 / 0.15);
+}
+
+.eco-badge {
+  display: inline-block;
+  padding: 0.2rem 0.7rem;
+  border-radius: 999px;
+  background: rgb(120 200 140 / 0.28);
+  font-size: 0.8rem;
+}
+
+
+/* ---- Chat panel: header, trip context, bubbles, chips (handoff look) ---- */
+.chat-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.chat-avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: #d9f36a;
+  color: #172119;
+}
+
+.chat-header-text {
+  display: grid;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.chat-header-text strong {
+  font-weight: 500;
+  font-size: 1rem;
+}
+
+.chat-header-text small {
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
+.chat-save {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-left: auto;
+  padding: 0.45rem 1rem;
+  border: 0;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.2);
+  color: inherit;
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.chat-save:hover:not(:disabled),
+.chat-save:focus-visible {
+  background: rgb(255 255 255 / 0.32);
+}
+
+.chat-save:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.chat-context {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  padding: 0.7rem 1rem;
+  border: 1px solid rgb(255 255 255 / 0.3);
+  border-radius: 18px;
+  background: rgb(0 0 0 / 0.08);
+  color: inherit;
+  font: inherit;
+  font-size: 0.82rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.chat-context span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.chat-context-edit {
+  margin-left: auto;
+  color: #d9f36a;
+}
+
+.chat-turn {
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-prompt {
+  align-self: flex-end;
+  max-width: 85%;
+  margin: 0 0 1rem;
+  padding: 0.6rem 1.1rem;
+  border-radius: 22px;
+  background: rgb(255 255 255 / 0.2);
+  font-size: 0.95rem;
+}
+
+.chat-guide-label {
+  margin-bottom: 0.35rem;
+  color: #d9f36a;
+  font-size: 0.65rem;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.chat-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.chat-chip {
+  padding: 0.35rem 0.9rem;
+  border: 1px solid currentcolor;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+  opacity: 0.85;
+  transition: background 0.15s, opacity 0.15s;
+}
+
+.chat-chip:hover,
+.chat-chip:focus-visible {
+  background: rgb(255 255 255 / 0.18);
+  opacity: 1;
+}
+
+.chat-send {
+  background: #d9f36a;
+  color: #172119;
+}
+
+.menu-item.is-current {
+  font-weight: 600;
+}
+
+.toast {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  z-index: 20;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.2rem;
+  border-radius: 999px;
+  background: #d9f36a;
+  color: #172119;
+  font-size: 0.9rem;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.2);
+  transform: translateX(-50%);
+  animation: toast-in 0.25s ease-out;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 12px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    animation: none;
+  }
+}
+
+/* Map screen: theme toggle + "Find something fun", top right */
+.map-actions {
+  position: absolute;
+  top: calc(var(--frame-width) + 1.5rem);
+  right: calc(var(--frame-width) + 1.5rem + var(--panel-w, 0px));
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  transition: right 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.map-actions .theme-button {
+  width: 3rem;
+  height: 3rem;
+  background: var(--glass);
+  color: var(--ink);
+}
+
+.map-actions .theme-button:hover,
+.map-actions .theme-button:focus-visible {
+  background: var(--ink);
+  color: var(--frame-color);
+}
+
+.find-fun {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 3rem;
+  padding: 0 1.25rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--glass);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.find-fun:hover,
+.find-fun:focus-visible {
+  background: var(--ink);
+  color: var(--frame-color);
+}
+
+.menu-count {
+  margin-left: auto;
+  min-width: 1.4rem;
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--frame-color);
+  font-size: 0.8rem;
+  line-height: 1.4rem;
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  .find-fun {
+    padding: 0 0.9rem;
+    font-size: 0.9rem;
+  }
+}
+
+/* Random pick from "Find something fun" */
+.pick-marker {
+  width: 22px;
+  height: 22px;
+  border: 4px solid #fff;
+  border-radius: 50%;
+  background: #ff6b4a;
+  box-shadow: 0 0 0 6px rgb(255 107 74 / 0.3);
+}
+
+.pick-card {
+  position: absolute;
+  top: calc(var(--frame-width) + 5.25rem);
+  left: calc(var(--frame-width) + 1.5rem);
+  z-index: 2;
+  width: min(320px, calc(100% - 3rem));
+  padding: 1.1rem 1.25rem 1.25rem;
+  border-radius: 24px;
+  background: var(--glass);
+  color: var(--ink);
+  animation: page-in 0.25s ease-out;
+}
+
+.pick-card-kind {
+  margin: 0 0 0.25rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.pick-card h2 {
+  margin: 0 1.5rem 0.25rem 0;
+  font-size: 1.3rem;
+}
+
+.pick-card-meta {
+  margin: 0 0 0.9rem;
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+.pick-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.pick-card-actions button,
+.pick-card-close {
+  border: 1px solid var(--ink);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.pick-card-actions button {
+  padding: 0.4rem 0.95rem;
+}
+
+.pick-card-actions button:hover,
+.pick-card-actions button:focus-visible,
+.pick-card-close:hover,
+.pick-card-close:focus-visible {
+  background: var(--ink);
+  color: var(--frame-color);
+}
+
+.pick-card-close {
+  position: absolute;
+  top: 0.8rem;
+  right: 0.8rem;
+  width: 1.7rem;
+  height: 1.7rem;
+  padding: 0;
+  line-height: 1;
+}
+
+/* Frosted glass: floating controls and popovers blur the map behind them */
+.menu-button,
+.menu-popover,
+.map-actions .theme-button,
+.find-fun,
+.pick-card {
+  -webkit-backdrop-filter: blur(16px) saturate(1.3);
+  backdrop-filter: blur(16px) saturate(1.3);
+}
+
+/* Docked chat: stacked header text, bigger replies, input pinned at the bottom */
+.chat-header-text strong,
+.chat-header-text small {
+  display: block;
+}
+
+.chat--docked .chat-reply {
+  font-size: 1.05rem;
+  line-height: 1.55;
+}
+
+.chat--docked .chat-thread {
+  padding-right: 0.25rem;
+}
+
+.chat--docked .chat-chips,
+.chat--docked .chat-input,
+.chat--docked .chat-new-trip {
+  flex: none;
+}
+
+/* All ways to get there (chat) */
+.route-options {
+  margin-top: 1.25rem;
+}
+
+.route-options h3 {
+  margin: 0 0 0.6rem;
+  color: #d9f36a;
+  font-size: 0.65rem;
+  font-weight: 500;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.route-options ul {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.route-card {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  width: 100%;
+  padding: 0.7rem 1rem;
+  border: 1px solid rgb(255 255 255 / 0.3);
+  border-radius: 18px;
+  background: rgb(0 0 0 / 0.08);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.route-card:hover,
+.route-card:focus-visible {
+  background: rgb(255 255 255 / 0.18);
+}
+
+.route-card.is-selected {
+  border-color: #d9f36a;
+  background: rgb(217 243 106 / 0.18);
+}
+
+.route-dot {
+  flex: none;
+  width: 0.8rem;
+  height: 0.8rem;
+  border: 2px solid #fff;
+  border-radius: 50%;
+}
+
+.route-main {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  line-height: 1.3;
+}
+
+.route-main small {
+  font-size: 0.78rem;
+  opacity: 0.85;
+}
+
+.route-steps {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.route-time {
+  font-size: 1.05rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.route-note {
+  margin: 0.6rem 0 0;
+  font-size: 0.82rem;
+  opacity: 0.85;
+}
+
+/* ---- Map markers: lime dots in the app's palette (softer lime in dark mode) ---- */
+:root {
+  --dot: #d9f36a;
+  --dot-ink: #1f3a33;
+  --dot-ring: rgb(217 243 106 / 0.4);
+}
+
+:root[data-theme="dark"] {
+  --dot: #b6c96a;
+  --dot-ink: #172119;
+  --dot-ring: rgb(182 201 106 / 0.35);
+}
+
+.stop-marker {
+  width: 48px;
+  height: 48px;
+  border: 0;
+  background: var(--dot);
+  color: var(--dot-ink);
+  font-family: inherit;
+  font-size: 1.5rem;
+  font-weight: 400;
+  box-shadow: 0 0 0 6px var(--dot-ring), 0 4px 14px rgb(0 0 0 / 0.25);
+}
+
+.you-are-here {
+  width: 22px;
+  height: 22px;
+  border: 4px solid var(--dot-ink);
+  background: var(--dot);
+  box-shadow: 0 0 0 4px var(--dot-ring);
+}
+
+.you-are-here::after {
+  background: var(--dot);
+}
+
+.pick-marker {
+  width: 30px;
+  height: 30px;
+  border: 5px solid var(--dot-ink);
+  background: var(--dot);
+  box-shadow: 0 0 0 6px var(--dot-ring);
 }

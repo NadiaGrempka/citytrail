@@ -36,12 +36,12 @@ class PlanServiceTest {
     @Test
     void aFollowUpAddsToTheRouteInsteadOfStartingOver() {
         Plan first = service.plan(new PlanRequest(
-                "I would like to go to Jozef k and then to a nearby museum", null, null, null, null, null));
+                "I would like to go to Jozef k and then to a nearby museum", null, null, null, null, null, null));
         assertEquals(2, first.stops().size());
         assertEquals("jozef-k", first.stops().get(0).place().id());
 
         Plan second = service.plan(new PlanRequest(
-                "and then I would like to go to a park near the museum", null, null, null, ids(first), false));
+                "and then I would like to go to a park near the museum", null, null, null, ids(first), false, null));
 
         assertEquals(3, second.stops().size());
         assertEquals(ids(first), ids(second).subList(0, 2));
@@ -51,10 +51,10 @@ class PlanServiceTest {
 
     @Test
     void aFollowUpKeepsTheRideHome() {
-        Plan first = service.plan(new PlanRequest("Jozef K and then home", null, null, null, null, null));
+        Plan first = service.plan(new PlanRequest("Jozef K and then home", null, null, null, null, null, null));
         assertNotNull(first.returnLeg());
 
-        Plan second = service.plan(new PlanRequest("then a park", null, null, null, ids(first), true));
+        Plan second = service.plan(new PlanRequest("then a park", null, null, null, ids(first), true, null));
 
         assertEquals(2, second.stops().size());
         assertNotNull(second.returnLeg());
@@ -63,15 +63,15 @@ class PlanServiceTest {
     @Test
     void nearANamedPlaceMeansNearThatPlaceNotTheLastStop() {
         Plan first = service.plan(new PlanRequest(
-                "Jozef k and then a nearby museum", null, null, null, null, null));
+                "Jozef k and then a nearby museum", null, null, null, null, null, null));
 
         // Without "near", the bookshop would be picked next to the museum (Antykwariat Naukowy).
         Plan plain = service.plan(new PlanRequest(
-                "and then a bookshop", null, null, null, ids(first), false));
+                "and then a bookshop", null, null, null, ids(first), false, null));
         assertEquals("antykwariat-naukowy", plain.stops().get(2).place().id());
 
         Plan near = service.plan(new PlanRequest(
-                "and then a bookshop near Dwor Artusa", null, null, null, ids(first), false));
+                "and then a bookshop near Dwor Artusa", null, null, null, ids(first), false, null));
         assertEquals(3, near.stops().size());
         assertEquals("firmin-bookshop", near.stops().get(2).place().id());
     }
@@ -79,22 +79,22 @@ class PlanServiceTest {
     @Test
     void nearAKindOfPlaceMeansThatStopOfTheRoute() {
         Plan first = service.plan(new PlanRequest(
-                "Jozef k and then a nearby museum", null, null, null, null, null));
+                "Jozef k and then a nearby museum", null, null, null, null, null, null));
 
         // "the cafe" is Józef K., the first stop; plain, the sight would be picked next to the museum.
         Plan plain = service.plan(new PlanRequest(
-                "and a historic sight", null, null, null, ids(first), false));
+                "and a historic sight", null, null, null, ids(first), false, null));
         assertEquals("gora-gradowa", plain.stops().get(2).place().id());
 
         Plan near = service.plan(new PlanRequest(
-                "and a historic sight near the cafe", null, null, null, ids(first), false));
+                "and a historic sight near the cafe", null, null, null, ids(first), false, null));
         assertEquals("bazylika-mariacka", near.stops().get(2).place().id());
     }
 
     @Test
     void nearInTheFirstMessageWorksForANamedPlace() {
         Plan plan = service.plan(new PlanRequest(
-                "a bookshop near Dwor Artusa", null, null, null, null, null));
+                "a bookshop near Dwor Artusa", null, null, null, null, null, null));
 
         assertEquals(List.of("firmin-bookshop"), ids(plan));
     }

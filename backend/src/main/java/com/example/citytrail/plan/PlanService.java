@@ -101,16 +101,34 @@ public class PlanService {
         Intent intent = new Intent(
                 List.copyOf(slots.subList(0, Math.min(slots.size(), IntentVocabulary.MAX_SLOTS))), returnHome);
 
-        double lat = defaultStartLat;
-        double lng = defaultStartLng;
-        if (request.startLat() != null && request.startLng() != null
-                && request.startLat() >= MIN_LAT && request.startLat() <= MAX_LAT
-                && request.startLng() >= MIN_LNG && request.startLng() <= MAX_LNG) {
-            lat = request.startLat();
-            lng = request.startLng();
-        }
+        double[] start = startPoint(request.startLat(), request.startLng());
+        return planner.plan(intent, start[0], start[1], startMinutes(request.startTime()), parsedBy,
+                Planner.walkSpeed(request.walkPace()));
+    }
 
-        return planner.plan(intent, lat, lng, startMinutes(request.startTime()), parsedBy);
+    /** Re-plans a saved trip from its stop ids alone (no text, no AI): same stops, same order. */
+    public Plan replan(List<String> stopIds, boolean returnHome, Double startLat, Double startLng) {
+        List<Place> route = previousPlaces(stopIds);
+        if (route.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "This trip has no known stops.");
+        }
+        List<Slot> slots = new ArrayList<>();
+        for (Place place : route) {
+            slots.add(new Slot(place.category(), List.of(), place.id()));
+        }
+        Intent intent = new Intent(
+                List.copyOf(slots.subList(0, Math.min(slots.size(), IntentVocabulary.MAX_SLOTS))), returnHome);
+        double[] start = startPoint(startLat, startLng);
+        return planner.plan(intent, start[0], start[1], DEFAULT_START_MINUTES, "saved");
+    }
+
+    /** The given start point if it lies in the Gdańsk box, otherwise the configured default. */
+    private double[] startPoint(Double lat, Double lng) {
+        if (lat != null && lng != null
+                && lat >= MIN_LAT && lat <= MAX_LAT && lng >= MIN_LNG && lng <= MAX_LNG) {
+            return new double[] {lat, lng};
+        }
+        return new double[] {defaultStartLat, defaultStartLng};
     }
 
     /** The stops of the route so far, in order (unknown ids are ignored). */

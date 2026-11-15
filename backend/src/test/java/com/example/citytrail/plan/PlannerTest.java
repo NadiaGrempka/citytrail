@@ -59,6 +59,21 @@ class PlannerTest {
     }
 
     @Test
+    void slowPaceTakesLongerToWalkThanFast() {
+        Intent intent = new Intent(List.of(new Slot("landmark", List.of("historic"))), false);
+
+        Plan slow = planner.plan(intent, START_LAT, START_LNG, 10 * 60, "test", Planner.walkSpeed("slow"));
+        Plan fast = planner.plan(intent, START_LAT, START_LNG, 10 * 60, "test", Planner.walkSpeed("fast"));
+
+        Leg slowLeg = slow.stops().get(0).legFromPrevious();
+        Leg fastLeg = fast.stops().get(0).legFromPrevious();
+        assertEquals("walk", slowLeg.mode());
+        assertEquals((int) Math.ceil(slowLeg.distanceM() / 60.0), slowLeg.minutes());
+        assertEquals((int) Math.ceil(fastLeg.distanceM() / 100.0), fastLeg.minutes());
+        assertTrue(slowLeg.minutes() >= fastLeg.minutes());
+    }
+
+    @Test
     void walksShortHops() {
         Intent intent = new Intent(List.of(new Slot("landmark", List.of("historic"))), false);
 

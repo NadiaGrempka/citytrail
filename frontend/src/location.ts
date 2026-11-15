@@ -6,7 +6,7 @@ export type StartPoint = {
   label: string;
   source: "device" | "default";
   /** Why the default was used instead of the device location. */
-  reason?: "denied" | "unavailable" | "outside";
+  reason?: "denied" | "unavailable" | "outside" | "chosen";
 };
 
 const defaultStart = (reason: StartPoint["reason"]): StartPoint => ({ ...DEFAULT_START, source: "default", reason });
@@ -15,7 +15,16 @@ const inGdansk = (lat: number, lng: number) =>
   lat >= GDANSK_BOUNDS.minLat && lat <= GDANSK_BOUNDS.maxLat && lng >= GDANSK_BOUNDS.minLng && lng <= GDANSK_BOUNDS.maxLng;
 
 /** Asks the browser for the visitor's location (shows the permission prompt) and falls back to ul. Długa 11. */
-export function resolveStart(): Promise<StartPoint> {
+export function resolveStart(
+  mode: "device" | "default" | "manual" = "device",
+  manual?: { lat: number; lng: number; label: string } | null,
+): Promise<StartPoint> {
+  if (mode === "manual" && manual) {
+    return Promise.resolve({ ...manual, source: "default", reason: "chosen" });
+  }
+  if (mode === "default" || mode === "manual") {
+    return Promise.resolve({ ...DEFAULT_START, source: "default", reason: "chosen" });
+  }
   if (!("geolocation" in navigator)) return Promise.resolve(defaultStart("unavailable"));
   return new Promise((resolve) => {
     navigator.geolocation.getCurrentPosition(
@@ -33,6 +42,7 @@ export function resolveStart(): Promise<StartPoint> {
 
 export function describeStart(start: StartPoint): string {
   if (start.source === "device") return "Starting from your location";
+  if (start.reason === "chosen") return `Starting from ${start.label} (your Settings)`;
   const why =
     start.reason === "denied"
       ? "location permission denied"

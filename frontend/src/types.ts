@@ -59,7 +59,7 @@ export type Stop = {
 };
 
 export type Plan = {
-  parsedBy: "llm" | "keyword";
+  parsedBy: "llm" | "keyword" | "saved";
   intent: Intent;
   dayOffset: number;
   date: string; // ISO date
@@ -70,3 +70,17 @@ export type Plan = {
   returnLeg: Leg | null;
   warnings: string[];
 };
+
+/** A saved trip as the API returns it (the stops are place ids; the plan is recomputed on open). */
+export type Trip = {
+  id: string;
+  title: string;
+  stopIds: string[];
+  returnHome: boolean;
+  startLat: number;
+  startLng: number;
+  prompt: string | null;
+  createdAt: string;
+};
+
+export type TripView = { trip: Trip; plan: Plan };
