@@ -16,6 +16,11 @@ CityTrail is a trip planner for visitors to Gdańsk. You type what you feel like
 
 The creative twist: the AI only translates the sentence into structured stops chosen from our own dataset, while the route, times and transport options come from plain deterministic code and public data, so the demo cannot hallucinate a place.
 
+
+## Demo
+[Watch the demo](/demo.mp4)
+
+
 ## Technical overview
 
 **Backend** (`backend/`): Java 21, Spring Boot 4.1.1, Maven.
